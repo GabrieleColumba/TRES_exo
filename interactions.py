@@ -1,5 +1,9 @@
 from amuse.units import units, constants, quantities
 import numpy as np
+import scipy.integrate as integrate
+from scipy.optimize import fsolve
+
+
 
 REPORT_BINARY_EVOLUTION = False
 REPORT_FUNCTION_NAMES = False
@@ -111,7 +115,10 @@ def nuclear_evolution_timescale(star):
 
 def kelvin_helmholds_timescale(star):
     if star.stellar_type in stellar_types_planetary_objects:
-        print('thermal evolution timescale for planetary objects requested')
+        #print('thermal evolution timescale for planetary objects requested')
+        eta = 0.03
+        #print("KH timescale:", (eta*constants.G*star.mass**2/star.radius/star.luminosity).in_(units.Myr))
+        #return eta*constants.G*star.mass**2/star.radius/star.luminosity
 
     if REPORT_FUNCTION_NAMES:
         print("KH timescale:", (constants.G*star.mass**2/star.radius/star.luminosity).in_(units.Myr))
@@ -1107,5 +1114,124 @@ def mass_transfer_timescale(binary, star):
     return mtt
 #-------------------------
         
+
+def compute_mass_evaporation(system, delta_t, circular_approx=False):
+    '''
+	Mass loss recipe for the energy limited evaporation.
+	---> Check variables units !
+	'''
+    # defining some inner functions for clarity, could be taken outside if useful
+    def xuv_luminosity(M_star, L_bol, P_binary, age):
+        '''
+        Compute the high energy luminosity from the bolometric one.
+        Luminosity in erg/s and age in Gyr.
+        TO DO----> time constrain required for M_star > 1.5 + EUV emission of high mass stars
+        '''
+        L_bol = L_bol.value_in(units.erg/units.s)		#conversion from solar lum to erg/s
+        M_star = M_star.value_in(units.MSun)
+        if 0.1 <= M_star < 1.5: 	# late F to early M stars
+            tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
+            if (age < tau_i): #or (P_binary < 10):		# stars with P_bin under 10 days should be rotationally locked
+                L_X = 6.3e-04 * L_bol 					#saturation regime
+            else: L_X = 1.89e28 * (age)**(-1.55)		#time decaying
+            # ? wouldn't it need a factor like l_ = L_bol/tau_i**(-1.55)*6.3/1.89*1e-32 ?
+            L_EUV = 10**4.8 * L_X**0.86
+        elif 1.5 <= M_star <= 3: 	# Flaccomio 2003, time constrain required !!
+            L_X = 10**(-3.5) * L_bol
+            L_EUV = 0
+        elif 3 < M_star < 10:
+            L_X = 10**31 	# erg s^-1
+            L_EUV = 0 	# actually EUV flux is stronger than X emission in this mass range
+        else: print("Star mass out of implemented range")
         
-    
+        return L_X + L_EUV 		# erg/s
+
+    def flux_inst(t, a_plan, a_bs, P_plan, P_binary, lum, star_number, e_plan ):
+        '''
+        Compute istantaneous flux at time t from given star, for a planet in circular or elliptical orbit.
+        COPLANAR orbits, as for now.
+        lum inputs in erg/s
+        '''
+        a_star_i = a_to_star(a_bs, star_number)
+        if circular_approx == True:
+            distance_sq = a_star_i**2 + a_plan**2 - 2*a_star_i*a_plan *np.cos(2*np.pi*t *(1/P_plan - 1/P_binary) - star_number*np.pi)
+        else:       #else solve the trascendent kepler eq. to obtain the true anomaly
+            r_plan, E_plan = radius_CM(t, a_plan, P_plan, e_plan) 			#radius and eccentric anomaly of planet from CM of the binary at time t
+            tru_anom = np.arccos((np.cos(E_plan) - e_plan)/(1-e_plan*np.cos(E_plan))) 	#true anomaly from eccentric anomaly
+            distance_sq = a_star_i**2 + r_plan**2 - 2*a_star_i*r_plan *np.cos(tru_anom - (2*np.pi*t /P_binary + star_number*np.pi) ) 	#2nd star has +pi phase
+        return lum*1e-07/distance_sq/AU**2		# to have the flux in SI units ! (erg/s -> W , AU -> m)
+
+    def a_to_star(a_binary, star_n):
+        '''
+        stars distances from binary CM. 
+        0 is the primary star, 1 the secondary.
+        '''
+        if star_n==0:
+            return a_binary/(1+M1/M2)
+        else:
+            return a_binary/(1+M2/M1)
+
+    # with elliptical orbits !
+    def radius_CM( t, smaxis, period, eccentricity ):
+        '''
+        Compute the distance object--center-of-mass at time t, for elliptical orbits, from eccentric anomaly.
+        '''
+        mean_anomaly = 2*np.pi*t / period	
+        Kequation = lambda E : mean_anomaly - E + eccentricity * np.sin(E) 	#kepler transcendent equation for eccentric anomaly
+        E_guess = mean_anomaly
+        ecc_anomaly = fsolve(Kequation, E_guess) 		#numerical solver for E from Kepler equation
+        return smaxis*(1-eccentricity*np.cos(ecc_anomaly)), ecc_anomaly
+
+    # assigning the variables from the triple's attributes
+    planet = system.triple.child1
+    binary = system.triple.child2
+
+    e_pl = system.triple.eccentricity
+    a_pl = system.triple.semimajor_axis.value_in(units.AU)		#au
+    R_pl = planet.radius.value_in(units.RJupiter)							#Rjup
+    M_pl = planet.mass.value_in(units.MJupiter)								#Mjup
+    P_pl = system.orbital_period(system.triple).value_in(units.day)
+
+    a_bin = system.triple.child2.semimajor_axis.value_in(units.AU)		#au
+    P_bin = system.orbital_period(binary).value_in(units.day)			#day
+    M1 = binary.child1.mass			#Msun
+    M2 = binary.child2.mass			#Msun
+    L1 = binary.child1.luminosity	#MSun * RSun**2 * Myr**-2 / Myr
+    L2 = binary.child1.luminosity
+    stars_age = system.triple.time.value_in(units.Gyr)
+    #age_2 = binary.child1.age		#probably not needed
+
+    AU = units.AU.value_in(units.m)
+    Rjup = units.RJupiter.value_in(units.m)
+    Mjup = units.MJupiter.value_in(units.kg)
+    G = constants.G.value_in(units.constants.G.unit)	#m^3 * kg^-1 * s^-2
+
+    eta = 0.6 				# thermal evaporation efficiency parameter
+
+    M_bin = M1 + M2     #binary.mass		#Msun
+    #xi = ( M_pl / (3*M_bin) )**1/3 * a_pl*AU / R_pl*Rjup		# small mass fraction approx
+    xi = roche_radius_dimensionless(planet.mass, M_bin) * system.triple.semimajor_axis / planet.radius
+    K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
+
+    # First compute the high-energy flux AVERAGE from the two inner stars
+    L_xuv1 = xuv_luminosity(M1, L1, P_bin, stars_age)		#erg/s
+    L_xuv2 = xuv_luminosity(M2, L2, P_bin, stars_age)		#erg/s
+    t_start = 0.
+    t_end = P_pl		#average on one orbital period of the planet, for now
+    F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
+    F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
+    Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )			# W/m^2
+
+    ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
+    # t_interval = np.linspace(t_start,t_end, 1000)
+    # tstep = t_end/1000
+    # f1 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl)
+    # f2 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl)
+    # mean_fl = np.sum(f1+f2)*tstep/(4*np.pi*(t_end-t_start))
+    # M_dot = eta * np.pi * (R_pl*Rjup)**3 * mean_fl / ( G * M_pl*Mjup * K_Erk )		# kg/s 
+
+    M_dot = eta * np.pi * (R_pl*Rjup)**3 * Flux_XUV / ( G * M_pl*Mjup * K_Erk )	|units.kg/units.s	# kg/s 
+    mass_lost = M_dot * delta_t
+    return mass_lost
+
+

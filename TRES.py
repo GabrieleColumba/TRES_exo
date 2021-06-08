@@ -2233,7 +2233,19 @@ class Triple_Class:
                     #resetting is_donor in determine_time_step                                    
                     continue
 
-                                         
+
+			# compute atmospheric evaporation (for exoplanets), assuming P-TYPE orbit -> child1 is planet
+            if self.triple.child1.stellar_type in stellar_types_planetary_objects:
+                if REPORT_DEBUG:
+                    print('Exoplanet atmospheric evaporation')
+
+                #print("computing mass evaporation, dt:", dt)
+                mass_lost = compute_mass_evaporation(self, dt, circular_approx=True)
+                prev_mass = self.triple.child1.mass
+                self.triple.child1.previous_mass = prev_mass        # updating the last value of the mass
+                self.triple.child1.mass = prev_mass - mass_lost     # new value of planet's mass after evaporation
+                print("mass lost:", mass_lost)
+
 
             #needed for nucleair timescale 
             self.update_time_derivative_of_radius() 
