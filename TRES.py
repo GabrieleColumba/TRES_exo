@@ -2203,6 +2203,22 @@ class Triple_Class:
                     print('Stellar evolution')
 
                 self.stellar_code.evolve_model(self.triple.time)
+
+                # compute atmospheric evaporation for exoplanets, assuming P-TYPE orbit -> child1 is planet
+                if self.triple.child1.stellar_type in stellar_types_planetary_objects:
+                    if REPORT_DEBUG:
+                        print('Exoplanet atmospheric evaporation')
+
+                    #print("computing mass evaporation, dt:", dt)
+                    mass_lost = compute_mass_evaporation(self, dt, circular_approx=True)
+                    self.triple.child1.previous_mass = self.triple.child1.mass        # updating the last value of the mass
+                    #self.triple.child1.mass = self.triple.child1.mass - mass_lost     # new value of planet's mass after evaporation
+                    print("mass lost:", mass_lost)
+
+                    planet = self.triple.child1
+                    planet_in_stellar_code = planet.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
+                    planet_in_stellar_code.change_mass(-1*mass_lost, 0.|units.yr)
+
                 self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"  
                 self.update_stellar_parameters()     
          
@@ -2232,19 +2248,6 @@ class Triple_Class:
                     #note that 'previous' parameters cannot be reset 
                     #resetting is_donor in determine_time_step                                    
                     continue
-
-
-			# compute atmospheric evaporation (for exoplanets), assuming P-TYPE orbit -> child1 is planet
-            if self.triple.child1.stellar_type in stellar_types_planetary_objects:
-                if REPORT_DEBUG:
-                    print('Exoplanet atmospheric evaporation')
-
-                #print("computing mass evaporation, dt:", dt)
-                mass_lost = compute_mass_evaporation(self, dt, circular_approx=True)
-                prev_mass = self.triple.child1.mass
-                self.triple.child1.previous_mass = prev_mass        # updating the last value of the mass
-                self.triple.child1.mass = prev_mass - mass_lost     # new value of planet's mass after evaporation
-                print("mass lost:", mass_lost)
 
 
             #needed for nucleair timescale 
