@@ -1,4 +1,5 @@
 from amuse.units import units, constants, quantities
+from amuse.units.core import unit
 import numpy as np
 import scipy.integrate as integrate
 from scipy.optimize import fsolve
@@ -1127,11 +1128,12 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         Luminosity in erg/s and age in Gyr.
         TO DO----> time constrain required for M_star > 1.5 + EUV emission of high mass stars
         '''
-        L_bol = L_bol.value_in(units.erg/units.s)		#conversion from solar lum to erg/s
+        L_bol = L_bol.value_in(units.erg/units.s)		#conversion to erg/s
         M_star = M_star.value_in(units.MSun)
+        age = age.value_in(units.Gyr)
         if 0.1 <= M_star < 1.5: 	# late F to early M stars
             tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
-            if (age < tau_i): #or (P_binary < 10):		# stars with P_bin under 10 days should be rotationally locked
+            if (age < tau_i) or (P_binary < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
                 L_X = 6.3e-04 * L_bol 					#saturation regime
             else: L_X = 1.89e28 * (age)**(-1.55)		#time decaying
             # ? wouldn't it need a factor like l_ = L_bol/tau_i**(-1.55)*6.3/1.89*1e-32 ?
@@ -1140,11 +1142,11 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
             L_X = 10**(-3.5) * L_bol
             L_EUV = 0
         elif 3 < M_star < 10:
-            L_X = 10**31 	# erg s^-1
+            L_X = 10**31 	# erg/s
             L_EUV = 0 	# actually EUV flux is stronger than X emission in this mass range
         else: print("Star mass out of implemented range")
         
-        return L_X + L_EUV 		# erg/s
+        return L_X + L_EUV | units.erg/units.s		# erg/s
 
     def flux_inst(t, a_plan, a_bs, P_plan, P_binary, lum, star_number, e_plan ):
         '''
@@ -1159,7 +1161,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
             r_plan, E_plan = radius_CM(t, a_plan, P_plan, e_plan) 			#radius and eccentric anomaly of planet from CM of the binary at time t
             tru_anom = np.arccos((np.cos(E_plan) - e_plan)/(1-e_plan*np.cos(E_plan))) 	#true anomaly from eccentric anomaly
             distance_sq = a_star_i**2 + r_plan**2 - 2*a_star_i*r_plan *np.cos(tru_anom - (2*np.pi*t /P_binary + star_number*np.pi) ) 	#2nd star has +pi phase
-        return lum*1e-07/distance_sq/AU**2		# to have the flux in SI units ! (erg/s -> W , AU -> m)
+        return lum/distance_sq
 
     def a_to_star(a_binary, star_n):
         '''
@@ -1187,24 +1189,19 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     binary = system.triple.child2
 
     e_pl = system.triple.eccentricity
-    a_pl = system.triple.semimajor_axis.value_in(units.AU)		#au
-    R_pl = planet.radius.value_in(units.RJupiter)							#Rjup
-    M_pl = planet.mass.value_in(units.MJupiter)								#Mjup
-    P_pl = system.orbital_period(system.triple).value_in(units.day)
+    a_pl = system.triple.semimajor_axis	
+    R_pl = planet.radius							
+    M_pl = planet.mass							
+    P_pl = system.orbital_period(system.triple)
 
-    a_bin = system.triple.child2.semimajor_axis.value_in(units.AU)		#au
-    P_bin = system.orbital_period(binary).value_in(units.day)			#day
+    a_bin = system.triple.child2.semimajor_axis	    #Rsun
+    P_bin = system.orbital_period(binary)		    #Myr
     M1 = binary.child1.mass			#Msun
     M2 = binary.child2.mass			#Msun
     L1 = binary.child1.luminosity	#MSun * RSun**2 * Myr**-2 / Myr
     L2 = binary.child1.luminosity
-    stars_age = system.triple.time.value_in(units.Gyr)
+    stars_age = system.triple.time
     #age_2 = binary.child1.age		#probably not needed
-
-    AU = units.AU.value_in(units.m)
-    Rjup = units.RJupiter.value_in(units.m)
-    Mjup = units.MJupiter.value_in(units.kg)
-    G = constants.G.value_in(units.constants.G.unit)	#m^3 * kg^-1 * s^-2
 
     eta = 0.6 				# thermal evaporation efficiency parameter
 
@@ -1214,13 +1211,13 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
     # First compute the high-energy flux AVERAGE from the two inner stars
-    L_xuv1 = xuv_luminosity(M1, L1, P_bin, stars_age)		#erg/s
-    L_xuv2 = xuv_luminosity(M2, L2, P_bin, stars_age)		#erg/s
-    t_start = 0.
+    L_xuv1 = xuv_luminosity(M1, L1, P_bin, stars_age)
+    L_xuv2 = xuv_luminosity(M2, L2, P_bin, stars_age)
+    t_start = 0. |units.Myr
     t_end = P_pl		#average on one orbital period of the planet, for now
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
     F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
-    Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )			# W/m^2
+    Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )	
 
     ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
     # t_interval = np.linspace(t_start,t_end, 1000)
@@ -1230,7 +1227,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     # mean_fl = np.sum(f1+f2)*tstep/(4*np.pi*(t_end-t_start))
     # M_dot = eta * np.pi * (R_pl*Rjup)**3 * mean_fl / ( G * M_pl*Mjup * K_Erk )		# kg/s 
 
-    M_dot = eta * np.pi * (R_pl*Rjup)**3 * Flux_XUV / ( G * M_pl*Mjup * K_Erk )	|units.kg/units.s	# kg/s 
+    M_dot = eta * np.pi * (R_pl)**3 * Flux_XUV / ( constants.G * M_pl * K_Erk )
     mass_lost = M_dot * delta_t
     return mass_lost
 
