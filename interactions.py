@@ -1,5 +1,4 @@
 from amuse.units import units, constants, quantities
-from amuse.units.core import unit
 import numpy as np
 import scipy.integrate as integrate
 from scipy.optimize import fsolve
@@ -1146,7 +1145,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
             L_EUV = 0 	# actually EUV flux is stronger than X emission in this mass range
         else: print("Star mass out of implemented range")
         
-        return L_X + L_EUV | units.erg/units.s		# erg/s
+        return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
 
     def flux_inst(t, a_plan, a_bs, P_plan, P_binary, lum, star_number, e_plan ):
         '''
@@ -1189,13 +1188,13 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     binary = system.triple.child2
 
     e_pl = system.triple.eccentricity
-    a_pl = system.triple.semimajor_axis	
+    a_pl = system.triple.semimajor_axis.value_in(units.RSun)
     R_pl = planet.radius							
     M_pl = planet.mass							
-    P_pl = system.orbital_period(system.triple)
+    P_pl = system.orbital_period(system.triple).value_in(units.Myr)
 
-    a_bin = system.triple.child2.semimajor_axis	    #Rsun
-    P_bin = system.orbital_period(binary)		    #Myr
+    a_bin = system.triple.child2.semimajor_axis.value_in(units.RSun)    #Rsun
+    P_bin = system.orbital_period(binary).value_in(units.Myr)		    #Myr
     M1 = binary.child1.mass			#Msun
     M2 = binary.child2.mass			#Msun
     L1 = binary.child1.luminosity	#MSun * RSun**2 * Myr**-2 / Myr
@@ -1211,21 +1210,20 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
     # First compute the high-energy flux AVERAGE from the two inner stars
-    L_xuv1 = xuv_luminosity(M1, L1, P_bin, stars_age)
+    L_xuv1 = xuv_luminosity(M1, L1, P_bin, stars_age) 
     L_xuv2 = xuv_luminosity(M2, L2, P_bin, stars_age)
-    t_start = 0. |units.Myr
+    t_start = 0.
     t_end = P_pl		#average on one orbital period of the planet, for now
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
     F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
-    Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )	
+    Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
 
     ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
     # t_interval = np.linspace(t_start,t_end, 1000)
     # tstep = t_end/1000
     # f1 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl)
     # f2 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl)
-    # mean_fl = np.sum(f1+f2)*tstep/(4*np.pi*(t_end-t_start))
-    # M_dot = eta * np.pi * (R_pl*Rjup)**3 * mean_fl / ( G * M_pl*Mjup * K_Erk )		# kg/s 
+    # Flux_XUV = np.sum(f1+f2)*tstep/(4*np.pi*(t_end-t_start))
 
     M_dot = eta * np.pi * (R_pl)**3 * Flux_XUV / ( constants.G * M_pl * K_Erk )
     mass_lost = M_dot * delta_t
