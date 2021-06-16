@@ -115,14 +115,15 @@ def nuclear_evolution_timescale(star):
 
 def kelvin_helmholds_timescale(star):
     if star.stellar_type in stellar_types_planetary_objects:
-        #print('thermal evolution timescale for planetary objects requested')
+        # check if the SEBA luminosity is correct for planets too !
         eta = 0.03
-        #print("KH timescale:", (eta*constants.G*star.mass**2/star.radius/star.luminosity).in_(units.Myr))
-        #return eta*constants.G*star.mass**2/star.radius/star.luminosity
+        #print('check KH tau', eta * constants.G*star.mass**2/star.radius/star.luminosity)
+    else: 
+        eta = 1.
 
     if REPORT_FUNCTION_NAMES:
         print("KH timescale:", (constants.G*star.mass**2/star.radius/star.luminosity).in_(units.Myr))
-    return constants.G*star.mass**2/star.radius/star.luminosity
+    return eta * constants.G*star.mass**2/star.radius/star.luminosity
 
 def dynamic_timescale(star):
     if REPORT_FUNCTION_NAMES:
