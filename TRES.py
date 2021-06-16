@@ -2212,7 +2212,6 @@ class Triple_Class:
                     #print("computing mass evaporation, dt:", dt)
                     mass_lost = compute_mass_evaporation(self, dt, circular_approx=False)
                     self.triple.child1.previous_mass = self.triple.child1.mass        # updating the last value of the mass
-                    #self.triple.child1.mass = self.triple.child1.mass - mass_lost     # new value of planet's mass after evaporation
                     print("mass lost:", mass_lost)
 
                     planet = self.triple.child1

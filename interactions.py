@@ -1119,8 +1119,8 @@ def mass_transfer_timescale(binary, star):
 
 def compute_mass_evaporation(system, delta_t, circular_approx=False):
     '''
-	Mass loss recipe for the energy limited evaporation.
-	---> Check variables units !
+	Mass loss recipes for the energy limited evaporation.
+    Currently only for Main Sequence stars.
 	'''
     # defining some inner functions for clarity, could be taken outside if useful
     def xuv_luminosity(M_star, L_bol, T_eff, P_binary, age):
@@ -1152,7 +1152,10 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         elif 3 < M_star < 10:
             L_X = 10**31 	# erg/s
             L_EUV = 0 	# actually EUV should be stronger than X emission in this mass range
-        else: print("Star mass out of implemented range")
+        else:
+            print("Star mass out of implemented range for evaporation")
+            L_X = 1e-03 * L_bol
+            L_EUV = 1e-03 * L_bol
         
         return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
 
@@ -1181,7 +1184,6 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         else:
             return a_binary/(1+M2/M1)
 
-    # with elliptical orbits !
     def radius_CM( t, smaxis, period, eccentricity ):
         '''
         Compute the distance object--center-of-mass at time t, for elliptical orbits, from eccentric anomaly.
@@ -1192,9 +1194,14 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         ecc_anomaly = fsolve(Kequation, E_guess) 		#numerical solver for E from Kepler equation
         return smaxis*(1-eccentricity*np.cos(ecc_anomaly)), ecc_anomaly
 
+
     # assigning the variables from the triple's attributes
     planet = system.triple.child1
     binary = system.triple.child2
+
+    # quick exit if no star is in MS
+    if (binary.child1.stellar_type.value != 1 ) and (binary.child2.stellar_type.value !=1):
+        return 0.
 
     e_pl = system.triple.eccentricity
     a_pl = system.triple.semimajor_axis.value_in(units.RSun)							
@@ -1207,7 +1214,6 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     L1 = binary.child1.luminosity	#MSun * RSun**2 * Myr**-2 / Myr
     L2 = binary.child1.luminosity
     stars_age = system.triple.time
-    #age_2 = binary.child1.age		#probably not needed
 
     eta = 0.6 				# thermal evaporation efficiency parameter
 
@@ -1216,13 +1222,20 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     xi = roche_radius_dimensionless(planet.mass, M_bin) * system.triple.semimajor_axis / planet.radius
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
-    # First compute the high-energy flux AVERAGE from the two inner stars
-    L_xuv1 = xuv_luminosity(M1, L1, binary.child1.temperature , P_bin, stars_age) 
-    L_xuv2 = xuv_luminosity(M2, L2, binary.child2.temperature, P_bin, stars_age)
+    # compute the high-energy flux AVERAGE from the two inner stars, before GBs
     t_start = 0.
-    t_end = P_pl		#average on one orbital period of the planet, for now
-    F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
-    F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
+    t_end = P_pl		#average on one orbital period of the planet
+
+    if binary.child1.stellar_type.value == 1:
+        L_xuv1 = xuv_luminosity(M1, L1, binary.child1.temperature , P_bin, stars_age)
+        F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
+    else: F1 = 0.
+
+    if binary.child2.stellar_type.value == 1:
+        L_xuv2 = xuv_luminosity(M2, L2, binary.child2.temperature, P_bin, stars_age)
+        F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
+    else: F2 = 0.
+    
     Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
 
     ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
