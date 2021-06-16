@@ -1,4 +1,5 @@
 from amuse.units import units, constants, quantities
+from amuse.units.core import unit
 import numpy as np
 import scipy.integrate as integrate
 from scipy.optimize import fsolve
@@ -1122,7 +1123,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
 	---> Check variables units !
 	'''
     # defining some inner functions for clarity, could be taken outside if useful
-    def xuv_luminosity(M_star, L_bol, P_binary, age):
+    def xuv_luminosity(M_star, L_bol, T_eff, P_binary, age):
         '''
         Compute the high energy luminosity from the bolometric one.
         Luminosity in erg/s and age in Gyr.
@@ -1131,6 +1132,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         L_bol = L_bol.value_in(units.erg/units.s)		#conversion to erg/s
         M_star = M_star.value_in(units.MSun)
         age = age.value_in(units.Gyr)
+
         if 0.1 <= M_star < 1.5: 	# late F to early M stars
             tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
             if (age < tau_i) or (P_binary < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
@@ -1138,12 +1140,18 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
             else: L_X = 1.89e28 * (age)**(-1.55)		#time decaying
             # ? wouldn't it need a factor like l_ = L_bol/tau_i**(-1.55)*6.3/1.89*1e-32 ?
             L_EUV = 10**4.8 * L_X**0.86
-        elif 1.5 <= M_star <= 3: 	# Flaccomio 2003, time constrain required !!
-            L_X = 10**(-3.5) * L_bol
-            L_EUV = 0
+
+        elif 1.5 <= M_star <= 3:
+            L_X = 10**(-3.5) * L_bol 	# Flaccomio 2003
+            # photospheric EUV from Kunitomo 2021
+            a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
+            logT = np.log10(T_eff.value_in(units.K))
+            T_arr = np.array([1, logT**1, logT**2, logT**3, logT**4, logT**5])
+            L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
+
         elif 3 < M_star < 10:
             L_X = 10**31 	# erg/s
-            L_EUV = 0 	# actually EUV flux is stronger than X emission in this mass range
+            L_EUV = 0 	# actually EUV should be stronger than X emission in this mass range
         else: print("Star mass out of implemented range")
         
         return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
@@ -1189,9 +1197,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     binary = system.triple.child2
 
     e_pl = system.triple.eccentricity
-    a_pl = system.triple.semimajor_axis.value_in(units.RSun)
-    R_pl = planet.radius							
-    M_pl = planet.mass							
+    a_pl = system.triple.semimajor_axis.value_in(units.RSun)							
     P_pl = system.orbital_period(system.triple).value_in(units.Myr)
 
     a_bin = system.triple.child2.semimajor_axis.value_in(units.RSun)    #Rsun
@@ -1211,8 +1217,8 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
     # First compute the high-energy flux AVERAGE from the two inner stars
-    L_xuv1 = xuv_luminosity(M1, L1, P_bin, stars_age) 
-    L_xuv2 = xuv_luminosity(M2, L2, P_bin, stars_age)
+    L_xuv1 = xuv_luminosity(M1, L1, binary.child1.temperature , P_bin, stars_age) 
+    L_xuv2 = xuv_luminosity(M2, L2, binary.child2.temperature, P_bin, stars_age)
     t_start = 0.
     t_end = P_pl		#average on one orbital period of the planet, for now
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
@@ -1226,7 +1232,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     # f2 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl)
     # Flux_XUV = np.sum(f1+f2)*tstep/(4*np.pi*(t_end-t_start))
 
-    M_dot = eta * np.pi * (R_pl)**3 * Flux_XUV / ( constants.G * M_pl * K_Erk )
+    M_dot = eta * np.pi * (planet.radius)**3 * Flux_XUV / ( constants.G * planet.mass * K_Erk )
     mass_lost = M_dot * delta_t
     return mass_lost
 
