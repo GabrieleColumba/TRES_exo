@@ -1126,8 +1126,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     def xuv_luminosity(M_star, L_bol, T_eff, P_binary, age):
         '''
         Compute the high energy luminosity from the bolometric one.
-        Luminosity in erg/s and age in Gyr.
-        TO DO----> time constrain required for M_star > 1.5 + EUV emission of high mass stars
+        TO DO---->  XUV emission of high mass stars
         '''
         L_bol = L_bol.value_in(units.erg/units.s)		#conversion to erg/s
         M_star = M_star.value_in(units.MSun)
@@ -1135,7 +1134,7 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
 
         if 0.1 <= M_star < 1.5: 	# late F to early M stars
             tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
-            if (age < tau_i) or (P_binary < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
+            if (age < tau_i) or (P_binary|units.Myr < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
                 L_X = 6.3e-04 * L_bol 					#saturation regime
             else: L_X = 1.89e28 * (age)**(-1.55)		#time decaying
             # ? wouldn't it need a factor like l_ = L_bol/tau_i**(-1.55)*6.3/1.89*1e-32 ?
@@ -1200,8 +1199,8 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     binary = system.triple.child2
 
     # quick exit if no star is in MS
-    if (binary.child1.stellar_type.value != 1 ) and (binary.child2.stellar_type.value !=1):
-        return 0.
+    if ( (binary.child1.stellar_type.value != 1 ) and (binary.child2.stellar_type.value != 1) ):
+        return 0. | units.MSun
 
     e_pl = system.triple.eccentricity
     a_pl = system.triple.semimajor_axis.value_in(units.RSun)							
