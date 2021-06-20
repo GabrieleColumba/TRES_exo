@@ -983,7 +983,7 @@ class Triple_Class:
             if star.is_donor and (bin.child1.is_donor or bin.child2.is_donor):
                 print('RLOF in inner and outer binary')
                 print(Rl1, bin.child1.radius, Rl2, bin.child2.radius)
-                print(RL3, star.radius)
+                print(Rl3, star.radius)
                 exit(1)                   
                 
         else:
