@@ -1149,8 +1149,8 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
             L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
 
         elif 3 < M_star < 10:
-            L_X = 10**31 	# erg/s
-            L_EUV = 0 	# actually EUV should be stronger than X emission in this mass range
+            L_X = 10**31 	# erg/s     #Flaccomio 2003
+            L_EUV = L_X 	# actually EUV should be stronger than X emission in this mass range
         else:
             print("Star mass out of implemented range for evaporation")
             L_X = 1e-03 * L_bol
@@ -1211,13 +1211,13 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     M1 = binary.child1.mass			#Msun
     M2 = binary.child2.mass			#Msun
     L1 = binary.child1.luminosity	#MSun * RSun**2 * Myr**-2 / Myr
-    L2 = binary.child1.luminosity
+    L2 = binary.child2.luminosity
     stars_age = system.triple.time
 
     eta = 0.6 				# thermal evaporation efficiency parameter
 
     M_bin = M1 + M2     #binary.mass		#Msun
-    #xi = ( M_pl / (3*M_bin) )**1/3 * a_pl*AU / R_pl*Rjup		# small mass fraction approx
+    #xi = ( planet.mass / (3*M_bin) )**1/3 * system.triple.semimajor_axis / planet.radius		# small mass fraction approx
     xi = roche_radius_dimensionless(planet.mass, M_bin) * system.triple.semimajor_axis / planet.radius
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
@@ -1235,7 +1235,9 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
     else: F2 = 0.
     
+    #print('F1', F1, '\tF2', F2)
     Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
+    #print('time', stars_age, '\t flux', Flux_XUV)
 
     ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
     # t_interval = np.linspace(t_start,t_end, 1000)
