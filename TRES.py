@@ -2507,11 +2507,12 @@ def plot_function(triple, dir_plots):
     ### plots to test secular code ###
     import amuse.plot as aplt
     import matplotlib.pyplot as plt
+    plt.rcParams.update({'font.size': 16})
     
 #    generic_name = '_M'+str(m1_array[0]) + '_m'+str(m2_array[0]) +'_n'+str(m3_array[0]) + '_a'+str(a_in_array_AU[0]) + '_A'+str(a_out_array_AU[0]) + '_e'+str(e_in_array[0]) + '_E'+str(e_out_array[0]) + '_i'+str(i_relative_array[0]/np.pi*180.0) + '_g'+str(g_in_array[0]) + '_G'+str(g_out_array[0]) + '_o'+str(o_in_array[0]) + '_O'+str(o_out_array[0]) + '_t'+str(t_max_Myr) + '_maxdr'+str(triple.maximum_radius_change_factor)+'_edr'+str(error_dr)
     generic_name = ''
 
-    figure = plt.figure(figsize=(10,13))
+    figure = plt.figure(figsize=(10,13), tight_layout=True)
     N_subplots = 4
     
     plot_e = figure.add_subplot(N_subplots,1,1)
@@ -2528,7 +2529,7 @@ def plot_function(triple, dir_plots):
     
     plot_i_relative.plot(times_array_Myr,i_relative_array*180.0/np.pi)
     plot_i_relative.set_xlim(0,t_max_Myr)
-    plot_i_relative.set_ylim(0.9*min(i_relative_array*180.0/np.pi),1.1*max(i_relative_array*180.0/np.pi))
+    plot_i_relative.set_ylim(0.95*min(i_relative_array*180.0/np.pi),1.05*max(i_relative_array*180.0/np.pi))
     plot_i_relative.set_xlabel('$t/\mathrm{Myr}$')
     plot_i_relative.set_ylabel('$i_\mathrm{relative} ({}^\circ)$')
     
@@ -2540,8 +2541,9 @@ def plot_function(triple, dir_plots):
     plot_a_out.set_xlabel('$t/\mathrm{Myr}$')
     plot_a_out.set_ylabel('$a_\mathrm{out}$')
     
-    figure.subplots_adjust(left=0.2, right=0.85, top=0.8, bottom=0.15)
-    plt.savefig(dir_plots+'TRES'+generic_name+'.pdf')
+    # figure.subplots_adjust(left=0.2, right=0.85, top=0.8, bottom=0.15)
+    # plt.savefig(dir_plots+'TRES'+generic_name+'.pdf')
+    plt.savefig(dir_plots+'TRES'+generic_name+'.png')
 #    plt.show()
     plt.close()
 
