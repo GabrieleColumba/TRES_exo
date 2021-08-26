@@ -2210,7 +2210,7 @@ class Triple_Class:
                         print('Exoplanet atmospheric evaporation')
 
                     #print("computing mass evaporation, dt:", dt)
-                    mass_lost = compute_mass_evaporation(self, dt, circular_approx=False)
+                    mass_lost = compute_mass_evaporation(self, dt)
                     self.triple.child1.previous_mass = self.triple.child1.mass        # updating the last value of the mass
                     print("mass lost:", mass_lost)
 

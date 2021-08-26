@@ -1117,7 +1117,7 @@ def mass_transfer_timescale(binary, star):
 #-------------------------
         
 
-def compute_mass_evaporation(system, delta_t, circular_approx=False):
+def compute_mass_evaporation(system, delta_t):
     '''
 	Mass loss recipes for the energy limited evaporation.
     Currently only for Main Sequence stars.
@@ -1158,19 +1158,16 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         
         return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
 
-    def flux_inst(t, a_plan, a_bs, P_plan, P_binary, lum, star_number, e_plan ):
+    def flux_inst(t, r_plan, a_st_i, P_plan, P_binary, lum, star_number, i_orb ):
         '''
-        Compute istantaneous flux at time t from given star, for a planet in circular or elliptical orbit.
-        COPLANAR orbits, as for now.
-        lum inputs in erg/s
+        Compute istantaneous flux at time t from given star, for a planet in circular orbit.
+        lum in erg/s
         '''
-        a_star_i = a_to_star(a_bs, star_number)
-        if circular_approx == True:
-            distance_sq = a_star_i**2 + a_plan**2 - 2*a_star_i*a_plan *np.cos(2*np.pi*t *(1/P_plan - 1/P_binary) - star_number*np.pi)
-        else:       #else solve the trascendent kepler eq. to obtain the true anomaly
-            r_plan, E_plan = radius_CM(t, a_plan, P_plan, e_plan) 			#radius and eccentric anomaly of planet from CM of the binary at time t
-            tru_anom = np.arccos((np.cos(E_plan) - e_plan)/(1-e_plan*np.cos(E_plan))) 	#true anomaly from eccentric anomaly
-            distance_sq = a_star_i**2 + r_plan**2 - 2*a_star_i*r_plan *np.cos(tru_anom - (2*np.pi*t /P_binary + star_number*np.pi) ) 	#2nd star has +pi phase
+        phi = 2*np.pi * t / P_plan                              # planet's phase angle (inclined)
+        st_ang = 2*np.pi* t / P_binary + star_number * np.pi      # star phase angle (on plane)
+        d_z2 = ( r_plan * np.sin(phi) * np.sin(i_orb) )**2
+        d_p2 = ( r_plan *np.cos(phi) - a_st_i *np.cos(st_ang) )**2 + ( r_plan *np.sin(phi)*np.cos(i_orb) - a_st_i *np.sin(st_ang) )**2
+        distance_sq = d_p2 + d_z2
         return lum/distance_sq
 
     def a_to_star(a_binary, star_n):
@@ -1183,15 +1180,6 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
         else:
             return a_binary/(1+M2/M1)
 
-    def radius_CM( t, smaxis, period, eccentricity ):
-        '''
-        Compute the distance object--center-of-mass at time t, for elliptical orbits, from eccentric anomaly.
-        '''
-        mean_anomaly = 2*np.pi*t / period	
-        Kequation = lambda E : mean_anomaly - E + eccentricity * np.sin(E) 	#kepler transcendent equation for eccentric anomaly
-        E_guess = mean_anomaly
-        ecc_anomaly = fsolve(Kequation, E_guess) 		#numerical solver for E from Kepler equation
-        return smaxis*(1-eccentricity*np.cos(ecc_anomaly)), ecc_anomaly
 
 
     # assigning the variables from the triple's attributes
@@ -1205,6 +1193,8 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
     e_pl = system.triple.eccentricity
     a_pl = system.triple.semimajor_axis.value_in(units.RSun)							
     P_pl = system.orbital_period(system.triple).value_in(units.Myr)
+    i_orbits = system.triple.relative_inclination
+    r_pl = a_pl * ( 1 + 0.5* e_pl**2 )          # time-averaged circular radius of elliptical orbits
 
     a_bin = system.triple.child2.semimajor_axis.value_in(units.RSun)    #Rsun
     P_bin = system.orbital_period(binary).value_in(units.Myr)		    #Myr
@@ -1223,16 +1213,18 @@ def compute_mass_evaporation(system, delta_t, circular_approx=False):
 
     # compute the high-energy flux AVERAGE from the two inner stars, before GBs
     t_start = 0.
-    t_end = P_pl		#average on one orbital period of the planet
+    t_end = P_pl		#average on one orbital period of the planet (~ 5 P_binary)
 
     if binary.child1.stellar_type.value == 1:
         L_xuv1 = xuv_luminosity(M1, L1, binary.child1.temperature , P_bin, stars_age)
-        F1 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl), limit=100)[0]
+        a_st_1 = a_to_star(a_bin, 1)
+        F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100)[0]
     else: F1 = 0.
 
     if binary.child2.stellar_type.value == 1:
         L_xuv2 = xuv_luminosity(M2, L2, binary.child2.temperature, P_bin, stars_age)
-        F2 = integrate.quad( flux_inst, t_start, t_end, args=(a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl), limit=100)[0]
+        a_st_2 = a_to_star(a_bin, 2)
+        F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100)[0]
     else: F2 = 0.
     
     #print('F1', F1, '\tF2', F2)
