@@ -1123,28 +1123,58 @@ def compute_mass_evaporation(system, delta_t):
     Currently only for Main Sequence stars.
 	'''
     # defining some inner functions for clarity, could be taken outside if useful
-    def xuv_luminosity(M_star, L_bol, T_eff, P_binary, age):
+    def xuv_luminosity(star):
         '''
         Compute the high energy luminosity from the bolometric one.
-        TO DO---->  XUV emission of high mass stars
+        TO DO---->  change lower mass boundary
         '''
-        L_bol = L_bol.value_in(units.erg/units.s)		#conversion to erg/s
-        M_star = M_star.value_in(units.MSun)
-        age = age.value_in(units.Gyr)
+        L_bol = star.luminosity.value_in(units.erg/units.s)		#conversion to erg/s
+        M_star = star.mass.value_in(units.MSun)
+        # age = age.value_in(units.Gyr)
 
-        if 0.1 <= M_star < 1.5: 	# late F to early M stars
-            tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
-            if (age < tau_i) or (P_binary|units.Myr < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
-                L_X = 6.3e-04 * L_bol 					#saturation regime
-            else: L_X = 1.89e28 * (age)**(-1.55)		#time decaying
-            # ? wouldn't it need a factor like l_ = L_bol/tau_i**(-1.55)*6.3/1.89*1e-32 ?
-            L_EUV = 10**4.8 * L_X**0.86
+        # if 0.1 <= M_star < 1.5: 	# late F to early M stars [Sanz-Forcada 2011]
+        #     tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
+        #     if (age < tau_i) or (P_binary|units.Myr < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
+        #         L_X = 6.3e-04 * L_bol 					#saturation regime
+        #     else: L_X = 1.89e28 * (age)**(-1.55)		#time decaying
+        #     # ? wouldn't it need a factor like l_ = L_bol/tau_i**(-1.55)*6.3/1.89*1e-32 ?
+        #     L_EUV = 10**4.8 * L_X**0.86
 
-        elif 1.5 <= M_star <= 3:
-            L_X = 10**(-3.5) * L_bol 	# Flaccomio 2003
+        def Rx_wright11(mass, p_rot):
+            '''
+            X-ray luminosity fraction as prescripted by Wright 2011, based on the Rossby number.
+            '''
+            Rx_sat = 10**(-3.13)
+            Ro_sat = 0.16
+            tau_conv = 10**(1.16 - 1.49* np.log(mass) - 0.54*(np.log(mass))**2)
+            Ro = p_rot/tau_conv
+            if Ro > Ro_sat:
+                B = -2.70
+                R_X = Rx_sat * (Ro / Ro_sat)**B
+            else:
+                R_X = Rx_sat
+            return R_X
+
+        if (0.1 <= M_star <= 2):
+            if (star.stellar_type.value < 12):
+                p_rot_star = p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
+                L_X = L_bol * Rx_wright11(M_star, p_rot_star)             # Rossby number approach, Wright 2011
+                L_EUV = 10**4.8 * L_X**0.86                 # Sanz-Forcada 2011 
+            else:       # WD stage
+                L_X = 0
+                L_EUV = 0
+        
+        elif 2 < M_star <= 3:
+            if star.stellar_type.value < 6:             # main sequence stage
+                L_X = 10**(-3.5) * L_bol 	            # Flaccomio 2003
+            elif 6 <= star.stellar_type.value < 12:     # during giant phases, rossby approach again, having convective envelopes
+                L_X = L_bol * Rx_wright11(star)
+            elif star.stellar_type_value >= 12 :        # WD stage
+                L_X = 0    # fake value, to extrapolate a realistic one
+
             # photospheric EUV from Kunitomo 2021
             a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
-            logT = np.log10(T_eff.value_in(units.K))
+            logT = np.log10(star.temperature.value_in(units.K))
             T_arr = np.array([1, logT**1, logT**2, logT**3, logT**4, logT**5])
             L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
 
@@ -1153,8 +1183,8 @@ def compute_mass_evaporation(system, delta_t):
             L_EUV = L_X 	# actually EUV should be stronger than X emission in this mass range
         else:
             print("Star mass out of implemented range for evaporation")
-            L_X = 1e-03 * L_bol
-            L_EUV = 1e-03 * L_bol
+            L_X = 1e-04 * L_bol
+            L_EUV = 1e-04 * L_bol
         
         return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
 
@@ -1176,19 +1206,15 @@ def compute_mass_evaporation(system, delta_t):
         0 is the primary star, 1 the secondary.
         '''
         if star_n==0:
-            return a_binary/(1+M1/M2)
+            return a_binary/(1+binary.child1.mass/binary.child2.mass)
         else:
-            return a_binary/(1+M2/M1)
+            return a_binary/(1+binary.child2.mass/binary.child1.mass)
 
 
 
     # assigning the variables from the triple's attributes
     planet = system.triple.child1
     binary = system.triple.child2
-
-    # quick exit if no star is in MS
-    if ( (binary.child1.stellar_type.value != 1 ) and (binary.child2.stellar_type.value != 1) ):
-        return 0. | units.MSun
 
     e_pl = system.triple.eccentricity
     a_pl = system.triple.semimajor_axis.value_in(units.RSun)							
@@ -1198,16 +1224,10 @@ def compute_mass_evaporation(system, delta_t):
 
     a_bin = system.triple.child2.semimajor_axis.value_in(units.RSun)    #Rsun
     P_bin = system.orbital_period(binary).value_in(units.Myr)		    #Myr
-    M1 = binary.child1.mass			#Msun
-    M2 = binary.child2.mass			#Msun
-    L1 = binary.child1.luminosity	#MSun * RSun**2 * Myr**-2 / Myr
-    L2 = binary.child2.luminosity
-    stars_age = system.triple.time
 
-    eta = 0.6 				# thermal evaporation efficiency parameter
+    eta = 0.2				# evaporation efficiency parameter
 
-    M_bin = M1 + M2     #binary.mass		#Msun
-    #xi = ( planet.mass / (3*M_bin) )**1/3 * system.triple.semimajor_axis / planet.radius		# small mass fraction approx
+    M_bin = binary.child1.mass + binary.child2.mass
     xi = roche_radius_dimensionless(planet.mass, M_bin) * system.triple.semimajor_axis / planet.radius
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
@@ -1215,21 +1235,17 @@ def compute_mass_evaporation(system, delta_t):
     t_start = 0.
     t_end = P_pl		#average on one orbital period of the planet (~ 5 P_binary)
 
-    if binary.child1.stellar_type.value == 1:
-        L_xuv1 = xuv_luminosity(M1, L1, binary.child1.temperature , P_bin, stars_age)
-        a_st_1 = a_to_star(a_bin, 1)
-        F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100)[0]
-    else: F1 = 0.
+    L_xuv1 = xuv_luminosity(binary.child1)
+    a_st_1 = a_to_star(a_bin, 1)
+    F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100)[0]
 
-    if binary.child2.stellar_type.value == 1:
-        L_xuv2 = xuv_luminosity(M2, L2, binary.child2.temperature, P_bin, stars_age)
-        a_st_2 = a_to_star(a_bin, 2)
-        F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100)[0]
-    else: F2 = 0.
+    L_xuv2 = xuv_luminosity(binary.child2)
+    a_st_2 = a_to_star(a_bin, 2)
+    F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100)[0]
     
     #print('F1', F1, '\tF2', F2)
     Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
-    #print('time', stars_age, '\t flux', Flux_XUV)
+    #print('time', '\t flux', Flux_XUV)
 
     ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
     # t_interval = np.linspace(t_start,t_end, 1000)
