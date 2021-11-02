@@ -10,6 +10,7 @@ from interactions import *
 from tidal_friction_constant import *
 
 import os, sys
+import time
 from seculartriple_TPS.interface import SecularTriple
 from amuse.units import units, constants
 from amuse.datamodel import Particles
@@ -75,14 +76,14 @@ class Triple_Class:
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
             stop_at_dynamical_instability, stop_at_semisecular_regime,  
-            stop_at_SN, SN_kick_distr,
+            stop_at_SN, SN_kick_distr, stop_at_CPU_time, max_CPU_time,
             file_name, file_type, dir_plots):
         
         self.set_stopping_conditions(stop_at_mass_transfer, stop_at_init_mass_transfer,stop_at_outer_mass_transfer,
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
-            stop_at_dynamical_instability, stop_at_semisecular_regime,  stop_at_SN)
+            stop_at_dynamical_instability, stop_at_semisecular_regime,  stop_at_SN, stop_at_CPU_time)
             
         if inner_primary_mass < inner_secondary_mass:
             spare = inner_primary_mass
@@ -118,6 +119,7 @@ class Triple_Class:
         self.file_name = file_name
         self.file_type = file_type
         self.SN_kick_distr = SN_kick_distr
+        self.max_CPU_time = max_CPU_time
 
         self.triple = bins[1]
         self.triple.time = 0.0|units.yr
@@ -125,7 +127,8 @@ class Triple_Class:
         self.triple.is_star = False #maybe not necessary?
         self.triple.dynamical_instability = False 
         self.triple.number = number 
-        self.triple.error_flag_secular = 0          
+        self.triple.error_flag_secular = 0
+        self.triple.CPU_time = 0.0
             
         self.setup_stellar_code(metallicity, stars)
         self.setup_secular_code(self.triple.as_set())      
@@ -181,7 +184,7 @@ class Triple_Class:
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
-            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN):
+            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, stop_at_CPU_time):
 
         if stop_at_disintegrated == False:
             print('stop_at_disintegrated = False not possible yet. After the disintegration of the triple, further evolution can be done with SeBa directly. ') 
@@ -214,6 +217,7 @@ class Triple_Class:
         self.stop_at_dynamical_instability = stop_at_dynamical_instability            
         self.stop_at_semisecular_regime = stop_at_semisecular_regime
         self.stop_at_SN = stop_at_SN
+        self.stop_at_CPU_time = stop_at_CPU_time
     
     def make_stars(self, inner_primary_mass, inner_secondary_mass, outer_mass, inner_semimajor_axis, outer_semimajor_axis):
         stars = Particles(3)
@@ -2126,6 +2130,8 @@ class Triple_Class:
 #-------------------------    
 
     def evolve_model(self):
+        start_time = time.time()
+    
         if REPORT_DEBUG:
             # for plotting data
             times_array = quantities.AdaptingVectorQuantity() 
@@ -2180,6 +2186,15 @@ class Triple_Class:
         self.determine_mass_transfer_timescale()
         self.save_snapshot()  
         while self.triple.time<self.tend: 
+		
+	    # if the maximum CPU time has been exceeded for the system, stop the evolution and continue with the next system
+            end_time = time.time()
+            self.triple.CPU_time = end_time - start_time
+            if (self.stop_at_CPU_time == True) and float(end_time - start_time) > self.max_CPU_time:
+                print('stopping conditions maximum CPU time')
+                print("CPU time: ", self.triple.CPU_time)
+                break
+		
             if REPORT_TRIPLE_EVOLUTION or REPORT_DEBUG:
                 print('\n\n kozai timescale:', self.kozai_timescale(), self.triple.kozai_type, self.octupole_parameter())
                         
@@ -2353,9 +2368,7 @@ class Triple_Class:
                 moi2_array.append(self.triple.child2.child2.moment_of_inertia_of_star.value_in(units.RSun**2*units.MSun))
                 moi3_array.append(self.triple.child1.moment_of_inertia_of_star.value_in(units.RSun**2*units.MSun))
             
-            
-            
-            
+                                    
         self.save_snapshot()        
             
             
@@ -3149,8 +3162,8 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             stop_at_stable_mass_transfer = True, stop_at_eccentric_stable_mass_transfer = True,
             stop_at_unstable_mass_transfer = False, stop_at_eccentric_unstable_mass_transfer = False,
             stop_at_merger = True, stop_at_disintegrated = True, stop_at_inner_collision = True, stop_at_outer_collision = True, 
-            stop_at_dynamical_instability = True, stop_at_semisecular_regime = False, stop_at_SN = False,  SN_kick_distr = 2,
-            file_name = "triple.hdf", file_type = "hdf5", dir_plots = ""):
+            stop_at_dynamical_instability = True, stop_at_semisecular_regime = False, stop_at_SN = False,  SN_kick_distr = 2, stop_at_CPU_time = False,
+            max_CPU_time = 3600.0, file_name = "triple.hdf", file_type = "hdf5", dir_plots = ""):
 
 
     set_printing_strategy("custom", 
@@ -3176,8 +3189,8 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
-            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, SN_kick_distr,
-            file_name, file_type, dir_plots)
+            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, SN_kick_distr, stop_at_CPU_time,
+            max_CPU_time, file_name, file_type, dir_plots)
 
 
     if triple_class_object.triple.correct_params == False:
@@ -3314,6 +3327,10 @@ def parse_arguments():
 
     parser.add_option("--stop_at_SN", dest="stop_at_SN", action="store_true", default = False,
                       help="stop at supernova [%default] %unit")
+    parser.add_option("--stop_at_CPU_time", dest="stop_at_CPU_time", action="store_true", default = False,
+                      help="stop at CPU time [%default] %unit")
+    parser.add_option("--max_CPU_time", dest="max_CPU_time", type="float", default = 3600.0,
+                      help="max CPU time [%default] %unit")
                       
                       
     parser.add_option("-f", dest="file_name", type ="string", default = "TRES.hdf",#"TRES.txt"
