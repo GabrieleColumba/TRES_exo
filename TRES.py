@@ -83,7 +83,11 @@ class Triple_Class:
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
+<<<<<<< HEAD
             stop_at_dynamical_instability, stop_at_semisecular_regime,  stop_at_SN, stop_at_CPU_time)
+=======
+            stop_at_dynamical_instability, stop_at_semisecular_regime,  stop_at_SN)
+>>>>>>> evaporation
             
         if inner_primary_mass < inner_secondary_mass:
             spare = inner_primary_mass
@@ -184,7 +188,11 @@ class Triple_Class:
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
+<<<<<<< HEAD
             stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, stop_at_CPU_time):
+=======
+            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN):
+>>>>>>> evaporation
 
         if stop_at_disintegrated == False:
             print('stop_at_disintegrated = False not possible yet. After the disintegration of the triple, further evolution can be done with SeBa directly. ') 
@@ -987,7 +995,7 @@ class Triple_Class:
             if star.is_donor and (bin.child1.is_donor or bin.child2.is_donor):
                 print('RLOF in inner and outer binary')
                 print(Rl1, bin.child1.radius, Rl2, bin.child2.radius)
-                print(RL3, star.radius)
+                print(Rl3, star.radius)
                 exit(1)                   
                 
         else:
@@ -2218,6 +2226,21 @@ class Triple_Class:
                     print('Stellar evolution')
 
                 self.stellar_code.evolve_model(self.triple.time)
+
+                # compute atmospheric evaporation for exoplanets, assuming P-TYPE orbit -> child1 is planet
+                if self.triple.child1.stellar_type in stellar_types_planetary_objects:
+                    if REPORT_DEBUG:
+                        print('Exoplanet atmospheric evaporation')
+
+                    #print("computing mass evaporation, dt:", dt)
+                    mass_lost = compute_mass_evaporation(self, dt)
+                    self.triple.child1.previous_mass = self.triple.child1.mass        # updating the last value of the mass
+                    print("mass lost:", mass_lost)
+
+                    planet = self.triple.child1
+                    planet_in_stellar_code = planet.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
+                    planet_in_stellar_code.change_mass(-1*mass_lost, 0.|units.yr)
+
                 self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"  
                 self.update_stellar_parameters()     
          
@@ -2248,7 +2271,6 @@ class Triple_Class:
                     #resetting is_donor in determine_time_step                                    
                     continue
 
-                                         
 
             #needed for nucleair timescale 
             self.update_time_derivative_of_radius() 
@@ -2506,11 +2528,16 @@ def plot_function(triple, dir_plots):
     ### plots to test secular code ###
     import amuse.plot as aplt
     import matplotlib.pyplot as plt
+    plt.rcParams.update({'font.size': 16})
     
 #    generic_name = '_M'+str(m1_array[0]) + '_m'+str(m2_array[0]) +'_n'+str(m3_array[0]) + '_a'+str(a_in_array_AU[0]) + '_A'+str(a_out_array_AU[0]) + '_e'+str(e_in_array[0]) + '_E'+str(e_out_array[0]) + '_i'+str(i_relative_array[0]/np.pi*180.0) + '_g'+str(g_in_array[0]) + '_G'+str(g_out_array[0]) + '_o'+str(o_in_array[0]) + '_O'+str(o_out_array[0]) + '_t'+str(t_max_Myr) + '_maxdr'+str(triple.maximum_radius_change_factor)+'_edr'+str(error_dr)
     generic_name = ''
 
+<<<<<<< HEAD
     figure = plt.figure(figsize=(10,13))
+=======
+    figure = plt.figure(figsize=(10,13), tight_layout=True)
+>>>>>>> evaporation
     N_subplots = 4
     
     plot_e = figure.add_subplot(N_subplots,1,1)
@@ -2527,7 +2554,7 @@ def plot_function(triple, dir_plots):
     
     plot_i_relative.plot(times_array_Myr,i_relative_array*180.0/np.pi)
     plot_i_relative.set_xlim(0,t_max_Myr)
-    plot_i_relative.set_ylim(0.9*min(i_relative_array*180.0/np.pi),1.1*max(i_relative_array*180.0/np.pi))
+    plot_i_relative.set_ylim(0.95*min(i_relative_array*180.0/np.pi),1.05*max(i_relative_array*180.0/np.pi))
     plot_i_relative.set_xlabel('$t/\mathrm{Myr}$')
     plot_i_relative.set_ylabel('$i_\mathrm{relative} ({}^\circ)$')
     
@@ -2539,8 +2566,9 @@ def plot_function(triple, dir_plots):
     plot_a_out.set_xlabel('$t/\mathrm{Myr}$')
     plot_a_out.set_ylabel('$a_\mathrm{out}$')
     
-    figure.subplots_adjust(left=0.2, right=0.85, top=0.8, bottom=0.15)
-    plt.savefig(dir_plots+'TRES'+generic_name+'.pdf')
+    # figure.subplots_adjust(left=0.2, right=0.85, top=0.8, bottom=0.15)
+    # plt.savefig(dir_plots+'TRES'+generic_name+'.pdf')
+    plt.savefig(dir_plots+'TRES'+generic_name+'.png')
 #    plt.show()
     plt.close()
 
@@ -3162,8 +3190,13 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             stop_at_stable_mass_transfer = True, stop_at_eccentric_stable_mass_transfer = True,
             stop_at_unstable_mass_transfer = False, stop_at_eccentric_unstable_mass_transfer = False,
             stop_at_merger = True, stop_at_disintegrated = True, stop_at_inner_collision = True, stop_at_outer_collision = True, 
+<<<<<<< HEAD
             stop_at_dynamical_instability = True, stop_at_semisecular_regime = False, stop_at_SN = False,  SN_kick_distr = 2, stop_at_CPU_time = False,
             max_CPU_time = 3600.0, file_name = "triple.hdf", file_type = "hdf5", dir_plots = ""):
+=======
+            stop_at_dynamical_instability = True, stop_at_semisecular_regime = False, stop_at_SN = False,  SN_kick_distr = 2,
+            file_name = "triple.hdf", file_type = "hdf5", dir_plots = ""):
+>>>>>>> evaporation
 
 
     set_printing_strategy("custom", 
@@ -3189,8 +3222,13 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
+<<<<<<< HEAD
             stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, SN_kick_distr, stop_at_CPU_time,
             max_CPU_time, file_name, file_type, dir_plots)
+=======
+            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, SN_kick_distr,
+            file_name, file_type, dir_plots)
+>>>>>>> evaporation
 
 
     if triple_class_object.triple.correct_params == False:
