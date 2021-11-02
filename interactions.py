@@ -1131,7 +1131,6 @@ def compute_mass_evaporation(system, delta_t):
         L_bol = star.luminosity.value_in(units.erg/units.s)		#conversion to erg/s
         M_star = star.mass.value_in(units.MSun)
         # age = age.value_in(units.Gyr)
-
         # if 0.1 <= M_star < 1.5: 	# late F to early M stars [Sanz-Forcada 2011]
         #     tau_i = 2.03e+20 * L_bol**(-0.65) 			# Gyr
         #     if (age < tau_i) or (P_binary|units.Myr < 10|units.day):		# stars with P_bin under 10 days should be rotationally locked
@@ -1155,38 +1154,48 @@ def compute_mass_evaporation(system, delta_t):
                 R_X = Rx_sat
             return R_X
 
-        if (0.1 <= M_star <= 2):
-            if (star.stellar_type.value < 12):
+        def blackbody(wavel, T):
+            '''
+            compute the specific flux of a BB, in SI units
+            '''
+            h = constants.h.value_in(units.erg * units.s)
+            c = constants.c.value_in(units.m/units.s)
+            KB = constants.kB.value_in(units.J/units.K)
+            B_l = np.float128(2*h* c**2 / wavel**5) / (np.exp( h*c/(wavel*KB*T), dtype=np.float128) - 1)
+            return B_l[0]
+
+        if (star.stellar_type.value >= 12):     # we have a WD, we integrate the radiance from 1 nm to 91.2 nm
+            F_xuv = integrate.quad( blackbody, 1e-09, 9.12e-08, args=(star.temperature.value_in(units.K)))
+            L_XUV = 4*np.pi* star.radius.value_in(units.m)**2 * F_xuv * 1e+07   # last factor converts J to erg
+            return L_XUV    # erg/s
+
+        else:
+            if (0.1 <= M_star <= 2):
                 p_rot_star = p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
                 L_X = L_bol * Rx_wright11(M_star, p_rot_star)             # Rossby number approach, Wright 2011
                 L_EUV = 10**4.8 * L_X**0.86                 # Sanz-Forcada 2011 
-            else:       # WD stage
-                L_X = 0
-                L_EUV = 0
-        
-        elif 2 < M_star <= 3:
-            if star.stellar_type.value < 6:             # main sequence stage
-                L_X = 10**(-3.5) * L_bol 	            # Flaccomio 2003
-            elif 6 <= star.stellar_type.value < 12:     # during giant phases, rossby approach again, having convective envelopes
-                L_X = L_bol * Rx_wright11(star)
-            elif star.stellar_type_value >= 12 :        # WD stage
-                L_X = 0    # fake value, to extrapolate a realistic one
+            
+            elif 2 < M_star <= 3:
+                if star.stellar_type.value < 6:             # main sequence stage
+                    L_X = 10**(-3.5) * L_bol 	            # Flaccomio 2003
+                elif 6 <= star.stellar_type.value < 12:     # during giant phases, rossby approach again, having convective envelopes
+                    L_X = L_bol * Rx_wright11(star)
 
-            # photospheric EUV from Kunitomo 2021
-            a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
-            logT = np.log10(star.temperature.value_in(units.K))
-            T_arr = np.array([1, logT**1, logT**2, logT**3, logT**4, logT**5])
-            L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
+                # photospheric EUV from Kunitomo 2021
+                a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
+                logT = np.log10(star.temperature.value_in(units.K))
+                T_arr = np.array([1, logT**1, logT**2, logT**3, logT**4, logT**5])
+                L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
 
-        elif 3 < M_star < 10:
-            L_X = 10**31 	# erg/s     #Flaccomio 2003
-            L_EUV = L_X 	# actually EUV should be stronger than X emission in this mass range
-        else:
-            print("Star mass out of implemented range for evaporation")
-            L_X = 1e-04 * L_bol
-            L_EUV = 1e-04 * L_bol
-        
-        return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
+            elif 3 < M_star < 10:
+                L_X = 10**31 	# erg/s     #Flaccomio 2003
+                L_EUV = L_X 	# actually EUV should be stronger than X emission in this mass range
+            else:
+                print("Star mass out of implemented range for evaporation")
+                L_X = 1e-04 * L_bol
+                L_EUV = 1e-04 * L_bol
+            
+            return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
 
     def flux_inst(t, r_plan, a_st_i, P_plan, P_binary, lum, star_number, i_orb ):
         '''
@@ -1209,7 +1218,6 @@ def compute_mass_evaporation(system, delta_t):
             return a_binary/(1+binary.child1.mass/binary.child2.mass)
         else:
             return a_binary/(1+binary.child2.mass/binary.child1.mass)
-
 
 
     # assigning the variables from the triple's attributes
@@ -1238,7 +1246,6 @@ def compute_mass_evaporation(system, delta_t):
     L_xuv1 = xuv_luminosity(binary.child1)
     a_st_1 = a_to_star(a_bin, 1)
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100)[0]
-
     L_xuv2 = xuv_luminosity(binary.child2)
     a_st_2 = a_to_star(a_bin, 2)
     F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100)[0]
