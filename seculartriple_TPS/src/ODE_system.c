@@ -1131,11 +1131,11 @@ double a_out_div_a_in_dynamical_stability(double m1, double m2, double m3, doubl
 {
     /* wrapper used in interface.py */
     
-    return a_out_div_a_in_dynamical_stability_mardling_aarseth_01(m1,m2,m3,e_out,itot);
+//    return a_out_div_a_in_dynamical_stability_mardling_aarseth_01(m1,m2,m3,e_out,itot);
 //    return a_out_div_a_in_dynamical_stability_petrovich_15_simple(e_in,e_out);
 //    return a_out_div_a_in_dynamical_stability_petrovich_15(m1,m2,m3,e_in,e_out,a_in,a_out);
 //    return a_out_div_a_in_dynamical_stability_holman_stype_98(m1,m2,m3,e_out);
-//    return a_out_div_a_in_dynamical_stability_holman_ptype_98(m1,m2,m3,e_in);
+    return a_out_div_a_in_dynamical_stability_holman_ptype_98(m1,m2,m3,e_in);
 
 }
 
