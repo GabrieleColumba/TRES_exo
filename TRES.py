@@ -83,11 +83,7 @@ class Triple_Class:
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
-<<<<<<< HEAD
             stop_at_dynamical_instability, stop_at_semisecular_regime,  stop_at_SN, stop_at_CPU_time)
-=======
-            stop_at_dynamical_instability, stop_at_semisecular_regime,  stop_at_SN)
->>>>>>> evaporation
             
         if inner_primary_mass < inner_secondary_mass:
             spare = inner_primary_mass
@@ -188,11 +184,7 @@ class Triple_Class:
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
-<<<<<<< HEAD
             stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, stop_at_CPU_time):
-=======
-            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN):
->>>>>>> evaporation
 
         if stop_at_disintegrated == False:
             print('stop_at_disintegrated = False not possible yet. After the disintegration of the triple, further evolution can be done with SeBa directly. ') 
@@ -2533,11 +2525,7 @@ def plot_function(triple, dir_plots):
 #    generic_name = '_M'+str(m1_array[0]) + '_m'+str(m2_array[0]) +'_n'+str(m3_array[0]) + '_a'+str(a_in_array_AU[0]) + '_A'+str(a_out_array_AU[0]) + '_e'+str(e_in_array[0]) + '_E'+str(e_out_array[0]) + '_i'+str(i_relative_array[0]/np.pi*180.0) + '_g'+str(g_in_array[0]) + '_G'+str(g_out_array[0]) + '_o'+str(o_in_array[0]) + '_O'+str(o_out_array[0]) + '_t'+str(t_max_Myr) + '_maxdr'+str(triple.maximum_radius_change_factor)+'_edr'+str(error_dr)
     generic_name = ''
 
-<<<<<<< HEAD
-    figure = plt.figure(figsize=(10,13))
-=======
     figure = plt.figure(figsize=(10,13), tight_layout=True)
->>>>>>> evaporation
     N_subplots = 4
     
     plot_e = figure.add_subplot(N_subplots,1,1)
@@ -3190,13 +3178,8 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             stop_at_stable_mass_transfer = True, stop_at_eccentric_stable_mass_transfer = True,
             stop_at_unstable_mass_transfer = False, stop_at_eccentric_unstable_mass_transfer = False,
             stop_at_merger = True, stop_at_disintegrated = True, stop_at_inner_collision = True, stop_at_outer_collision = True, 
-<<<<<<< HEAD
             stop_at_dynamical_instability = True, stop_at_semisecular_regime = False, stop_at_SN = False,  SN_kick_distr = 2, stop_at_CPU_time = False,
             max_CPU_time = 3600.0, file_name = "triple.hdf", file_type = "hdf5", dir_plots = ""):
-=======
-            stop_at_dynamical_instability = True, stop_at_semisecular_regime = False, stop_at_SN = False,  SN_kick_distr = 2,
-            file_name = "triple.hdf", file_type = "hdf5", dir_plots = ""):
->>>>>>> evaporation
 
 
     set_printing_strategy("custom", 
@@ -3222,13 +3205,8 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             stop_at_stable_mass_transfer, stop_at_eccentric_stable_mass_transfer,
             stop_at_unstable_mass_transfer, stop_at_eccentric_unstable_mass_transfer,
             stop_at_merger, stop_at_disintegrated, stop_at_inner_collision, stop_at_outer_collision, 
-<<<<<<< HEAD
             stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, SN_kick_distr, stop_at_CPU_time,
             max_CPU_time, file_name, file_type, dir_plots)
-=======
-            stop_at_dynamical_instability, stop_at_semisecular_regime, stop_at_SN, SN_kick_distr,
-            file_name, file_type, dir_plots)
->>>>>>> evaporation
 
 
     if triple_class_object.triple.correct_params == False:
