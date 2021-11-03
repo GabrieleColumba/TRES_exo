@@ -1252,10 +1252,10 @@ def compute_mass_evaporation(system, delta_t):
 
     L_xuv1 = xuv_luminosity(binary.child1)
     a_st_1 = a_to_star(a_bin, 1)
-    F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100)[0]
+    F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100, full_output=1)[0]
     L_xuv2 = xuv_luminosity(binary.child2)
     a_st_2 = a_to_star(a_bin, 2)
-    F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100)[0]
+    F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100, full_output=1)[0]
     
     #print('F1', F1, '\tF2', F2)
     Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
