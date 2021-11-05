@@ -128,9 +128,9 @@ from amuse.ic.flatimf import new_flat_mass_distribution
 
 precision = 1.e-10 
 min_mass = 0.08 |units.MSun # for primary stars
-absolute_min_mass = 0.0075|units.MSun #  for secondaries and tertiaries
+absolute_min_mass = 0.00005|units.MSun #  for secondaries and tertiaries
 absolute_max_mass = 100 |units.MSun
-REPORT = False 
+REPORT = True 
 REPORT_USER_WARNINGS = False 
 
 def flat_distr(lower, upper):
@@ -755,7 +755,7 @@ def evolve_model(inner_primary_mass_max, inner_primary_mass_min,
 
 
 
-        if (min_mass > triple_system.inner_primary_mass) or (min_mass > triple_system.inner_secondary_mass) or (min_mass > triple_system.outer_mass):
+        if (min_mass > triple_system.inner_primary_mass) or (min_mass > triple_system.inner_secondary_mass) or (absolute_min_mass > triple_system.outer_mass):
                 if REPORT:
                     print('non-star included: ', triple_system.inner_primary_mass, triple_system.inner_secondary_mass, triple_system.outer_mass)
                 continue
