@@ -1171,24 +1171,27 @@ def compute_mass_evaporation(system, delta_t):
             c = constants.c.value_in(units.m/units.s)
             KB = constants.kB.value_in(units.J/units.K)
             B_l = np.float128(2*h* c**2 / wavel**5) / (np.exp( h*c/(wavel*KB*T), dtype=np.float128) - 1)
-            return B_l[0]
+            return B_l
 
-        if (star.stellar_type.value >= 12):     # we have a WD, we integrate the radiance from 1 nm to 91.2 nm
-            F_xuv = integrate.quad( blackbody, 1e-09, 9.12e-08, args=(star.temperature.value_in(units.K)))
+        if star.stellar_type.value in [10,11,12,13]:     # we have a WD, we integrate the radiance from 1 nm to 91.2 nm
+            print('we have a WD')
+            F_xuv = integrate.quad( blackbody, 1e-09, 9.12e-08, args=(star.temperature.value_in(units.K)))[0]
             L_XUV = 4*np.pi* star.radius.value_in(units.m)**2 * F_xuv * 1e+07   # last factor converts J to erg
+            print('M WD:', star.mass, '\t T WD:', star.temperature)
             return L_XUV    # erg/s
 
         else:
             if (0.1 <= M_star <= 2):
-                p_rot_star = p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
+                p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
                 L_X = L_bol * Rx_wright11(M_star, p_rot_star)             # Rossby number approach, Wright 2011
                 L_EUV = 10**4.8 * L_X**0.86                 # Sanz-Forcada 2011 
             
             elif 2 < M_star <= 3:
-                if star.stellar_type.value < 6:             # main sequence stage
+                if star.stellar_type.value in [1,2,7,8]:             # main sequence stage
                     L_X = 10**(-3.5) * L_bol 	            # Flaccomio 2003
-                elif 6 <= star.stellar_type.value < 12:     # during giant phases, rossby approach again, having convective envelopes
-                    L_X = L_bol * Rx_wright11(star)
+                elif star.stellar_type.value in [3,4,5,6,9]:     # during giant phases, rossby approach again, having convective envelopes
+                    p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
+                    L_X = L_bol * Rx_wright11(M_star, p_rot_star)
 
                 # photospheric EUV from Kunitomo 2021
                 a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
@@ -1252,6 +1255,7 @@ def compute_mass_evaporation(system, delta_t):
     t_start = 0.
     t_end = P_pl		#average on one orbital period of the planet (~ 5 P_binary)
 
+    print('Time: ', system.triple.time, 'star types:', binary.child1.stellar_type, '\t', binary.child2.stellar_type)
     L_xuv1 = xuv_luminosity(binary.child1)
     a_st_1 = a_to_star(a_bin, 1)
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100, full_output=1)[0]
@@ -1261,7 +1265,6 @@ def compute_mass_evaporation(system, delta_t):
     
     #print('F1', F1, '\tF2', F2)
     Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
-    #print('time', '\t flux', Flux_XUV)
 
     ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
     # t_interval = np.linspace(t_start,t_end, 1000)
