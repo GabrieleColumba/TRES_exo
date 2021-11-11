@@ -1174,7 +1174,6 @@ def compute_mass_evaporation(system, delta_t):
             return B_l
 
         if star.stellar_type.value in [10,11,12,13]:     # we have a WD, we integrate the radiance from 1 nm to 91.2 nm
-            print('we have a WD')
             F_xuv = integrate.quad( blackbody, 1e-09, 9.12e-08, args=(star.temperature.value_in(units.K)))[0]
             L_XUV = 4*np.pi* star.radius.value_in(units.m)**2 * F_xuv * 1e+07   # last factor converts J to erg
             print('M WD:', star.mass, '\t T WD:', star.temperature)
@@ -1185,6 +1184,7 @@ def compute_mass_evaporation(system, delta_t):
                 p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
                 L_X = L_bol * Rx_wright11(M_star, p_rot_star)             # Rossby number approach, Wright 2011
                 L_EUV = 10**4.8 * L_X**0.86                 # Sanz-Forcada 2011 
+
             
             elif 2 < M_star <= 3:
                 if star.stellar_type.value in [1,2,7,8]:             # main sequence stage
@@ -1192,6 +1192,7 @@ def compute_mass_evaporation(system, delta_t):
                 elif star.stellar_type.value in [3,4,5,6,9]:     # during giant phases, rossby approach again, having convective envelopes
                     p_rot_star = 2*np.pi / star.spin_angular_frequency.value_in(1/units.s)
                     L_X = L_bol * Rx_wright11(M_star, p_rot_star)
+                else: print('Houston we have a problem in EVA')
 
                 # photospheric EUV from Kunitomo 2021
                 a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
@@ -1265,13 +1266,6 @@ def compute_mass_evaporation(system, delta_t):
     
     #print('F1', F1, '\tF2', F2)
     Flux_XUV = (F1+F2)/(4*np.pi* (t_end-t_start) )  | (units.erg/units.s / units.RSun**2)
-
-    ##  ---- alternative hard-coded averaging, in case of troubles with scipy.integrate ----- !
-    # t_interval = np.linspace(t_start,t_end, 1000)
-    # tstep = t_end/1000
-    # f1 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv1, 0, e_pl)
-    # f2 = flux_inst(t_interval, a_pl, a_bin, P_pl, P_bin, L_xuv2, 1, e_pl)
-    # Flux_XUV = np.sum(f1+f2)*tstep/(4*np.pi*(t_end-t_start))
 
     M_dot = eta * np.pi * (planet.radius)**3 * Flux_XUV / ( constants.G * planet.mass * K_Erk )
     mass_lost = M_dot * delta_t
