@@ -1194,14 +1194,16 @@ def compute_mass_evaporation(system, delta_t):
                     L_X = L_bol * Rx_wright11(M_star, p_rot_star)
                 else: print('Houston we have a problem in EVA')
 
-                # photospheric EUV from Kunitomo 2021
-                a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
-                logT = np.log10(star.temperature.value_in(units.K))
-                T_arr = np.array([1, logT**1, logT**2, logT**3, logT**4, logT**5])
-                L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
+                # # photospheric EUV from Kunitomo 2021
+                # a_arr = np.array([ 120432.67, -145282.56,  69832.410, -16728.880, 1998.2116, -95.238145 ])
+                # logT = np.log10(star.temperature.value_in(units.K))
+                # T_arr = np.array([1, logT**1, logT**2, logT**3, logT**4, logT**5])
+                # L_EUV = L_bol * 10** np.dot(a_arr, T_arr)
+
+                L_EUV = 10**4.8 * L_X**0.86                 # Sanz-Forcada 2011
 
             elif 3 < M_star < 10:
-                L_X = 10**31 	# erg/s     #Flaccomio 2003
+                L_X = 1e-06 * L_bol  # 10**31 	# erg/s     #Flaccomio 2003
                 L_EUV = L_X 	# actually EUV should be stronger than X emission in this mass range
             else:
                 print("Star mass out of implemented range for evaporation")
@@ -1213,7 +1215,7 @@ def compute_mass_evaporation(system, delta_t):
     def flux_inst(t, r_plan, a_st_i, P_plan, P_binary, lum, star_number, i_orb ):
         '''
         Compute istantaneous flux at time t from given star, for a planet in circular orbit.
-        lum in erg/s
+        lum input has to be erg/s
         '''
         phi = 2*np.pi * t / P_plan                              # planet's phase angle (inclined)
         st_ang = 2*np.pi* t / P_binary + star_number * np.pi      # star phase angle (on plane)
@@ -1252,7 +1254,7 @@ def compute_mass_evaporation(system, delta_t):
     xi = roche_radius_dimensionless(planet.mass, M_bin) * system.triple.semimajor_axis / planet.radius
     K_Erk = 1 - 1.5/xi + 0.5* xi**(-3)		#Erkaev (2007) escape factor
 
-    # compute the high-energy flux AVERAGE from the two inner stars, before GBs
+    # compute the high-energy flux AVERAGE from the two stars
     t_start = 0.
     t_end = P_pl		#average on one orbital period of the planet (~ 5 P_binary)
 
