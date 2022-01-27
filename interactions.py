@@ -38,6 +38,8 @@ bin_type = {
                 'unknown': 'unknown',       
                 'merger': 'merger', 
                 'disintegrated': 'disintegrated', 
+                'dyn_inst': 'dynamical_instability', 
+
                 'detached': 'detached',       
                 'contact': 'contact',    
                 'collision': 'collision',    
@@ -58,6 +60,7 @@ bin_type = {
 
                 'double_common_envelope': 'double_common_envelope',
                 'dce': 'double_common_envelope',
+                
                 
             }            
 
@@ -994,7 +997,7 @@ def q_crit(star):
     elif star.stellar_type in stellar_types_compact_objects:#eventhough ns & bh shouldn't be donors... 
         return 0.628
     else: #stellar type 2, and 8
-        return 3 #SILVIA this seems awfully high for hg
+        return 3 # high for hg?
         
     
 
