@@ -173,6 +173,7 @@ The full list of options is [default]:
 --q_distr  outer mass ratio option: 
         0: "Uniform distribution", #default
         1: "Kroupa IMF",
+        2: "Galicher 2016 powerlaw (M^-1.31)",
 --A_max    upper limit for the inner semi-major axis [5e6 RSun]
 --A_min    lower limit for the inner semi-major axis [5]
 --A_distr  inner semi-major axcis option: 
@@ -191,6 +192,8 @@ The full list of options is [default]:
         3: "Lognormal mu = 10^3.5d, sigma = 2.3",
         4: "Rizzuto Lognormal mu = 10^0.95 AU, sigma = 1.35",
         5: "Sana et al. 2012",
+        6: "flat distribution",
+        7: "Galicher 2016 powerlaw (a^-0.61)",
 --E_max    upper limit for the inner eccentricity [1.]
 --E_min    lower limit for the inner eccentricity [0.]
 --E_distr  inner eccentricity option: 

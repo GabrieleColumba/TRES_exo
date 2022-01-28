@@ -1,8 +1,6 @@
 from amuse.units import units, constants, quantities
-from amuse.units.core import unit
 import numpy as np
 import scipy.integrate as integrate
-from scipy.optimize import fsolve
 
 
 

@@ -20,7 +20,8 @@ lib_inner_mass_ratio_distr = {0: "Uniform distribution", #default
 ##            --q_min    lower limit for the mass of the outer star [0.]
 ##            --q_distr  outer mass ratio option: 
 lib_outer_mass_ratio_distr = {0: "Uniform distribution", #default
-                            1: "Kroupa IMF",}
+                            1: "Kroupa IMF",
+                            2: "Galicher 2016 powerlaw (M^-1.31) + flat tail",}
 ##            --A_max    upper limit for the inner semi-major axis [5e6 RSun]
 ##            --A_min    lower limit for the inner semi-major axis [5]
 ##            --A_distr  inner semi-major axcis option: 
@@ -38,7 +39,9 @@ lib_outer_semi_distr = {0: "Log Uniform distribution", #default
                    2: "Tokovinin lognormal mu = 10^5d, sigma = 2.3",
                    3: "Lognormal mu = 10^3.5d, sigma = 2.3",
                    4: "Rizzuto Lognormal mu = 10^0.95 AU, sigma = 1.35",
-                   5: "Sana et al. 2012",}
+                   5: "Sana et al. 2012",
+                   6: "flat distribution",
+                   7: "Galicher 2016 powerlaw (a^-0.61)",}
 ##            --E_max    upper limit for the inner eccentricity [0.9]
 ##            --E_min    lower limit for the inner eccentricity [0.]
 ##            --E_distr  inner eccentricity option: 
@@ -270,8 +273,10 @@ class Generate_initial_triple:
             outer_mass_ratio = outer_mass_ratio_min
             self.outer_mass = outer_mass_ratio * (self.inner_primary_mass + self.inner_secondary_mass)
         else: 
-            if outer_mass_ratio_distr == 1:# Kroupa 2001 
+            if outer_mass_ratio_distr == 1:     # Kroupa 2001 
                 self.outer_mass = new_kroupa_mass_distribution(1, mass_min=outer_mass_min, mass_max=outer_mass_max)[0]
+            elif outer_mass_ratio_distr == 2:   # Galicher et al 2016
+                self.outer_mass = powerlaw_distr( m_min= outer_mass_min, m_max= outer_mass_max, slope= -1.31)
             else: # flat distribution
                inner_mass_tot = self.inner_primary_mass + self.inner_secondary_mass
                outer_mass_ratio = flat_distr(max(outer_mass_ratio_min,outer_mass_min/inner_mass_tot), min(outer_mass_ratio_max, outer_mass_max/inner_mass_tot))
@@ -473,7 +478,12 @@ class Generate_initial_triple:
                    P0 = 10**logP|units.day
                    mass_tot = self.inner_primary_mass + self.inner_secondary_mass + self.outer_mass
                    self.outer_semi = ((P0/2./np.pi)**2 * mass_tot*constants.G) ** (1./3.)                
-                                                         
+
+            elif outer_semi_distr == 6:     # flat distr (uniform)
+                self.outer_semi = flat_distr( outer_semi_min, outer_semi_max)
+            elif outer_semi_distr == 7:     # Galicher 2016: powerlaw, slope -0.61
+                self.outer_semi = powerlaw_distr( outer_semi_min, outer_semi_max, slope= -0.61)
+
             else: # log flat distribution
                 if outer_semi_min > outer_semi_max: #possible for extreme eccentricities
                     return False
