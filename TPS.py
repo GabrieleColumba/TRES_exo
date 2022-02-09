@@ -20,8 +20,8 @@ lib_inner_mass_ratio_distr = {0: "Uniform distribution", #default
 ##            --q_min    lower limit for the mass of the outer star [0.]
 ##            --q_distr  outer mass ratio option: 
 lib_outer_mass_ratio_distr = {0: "Uniform distribution", #default
-                            1: "Kroupa IMF",
-                            2: "Galicher 2016 powerlaw (M^-1.31) + flat tail",}
+                            1: "Kroupa IMF",        # not recommended for exoplanets
+                            2: "Galicher 2016 powerlaw (M^-1.31)",} # mass limits instead of mass ratio 
 ##            --A_max    upper limit for the inner semi-major axis [5e6 RSun]
 ##            --A_min    lower limit for the inner semi-major axis [5]
 ##            --A_distr  inner semi-major axcis option: 
@@ -126,9 +126,12 @@ from amuse.ic.salpeter import new_salpeter_mass_distribution
 from amuse.ic.flatimf import new_flat_mass_distribution
 
 precision = 1.e-10 
-min_mass = 0.08 |units.MSun # for primary stars
-absolute_min_mass = 0.00005|units.MSun #  for secondaries and tertiaries
+# min_mass = 0.08 |units.MSun # for primary stars
+min_mass_stellar = 0.08 |units.MSun     # for primary stars
+min_mass_BD = 0.0123 |units.MSun        # BD boundary
+absolute_min_mass = 0.00005|units.MSun  # for planetary objects
 absolute_max_mass = 100 |units.MSun
+max_mass_SSO = 0.078 |units.MSun
 REPORT = True 
 REPORT_USER_WARNINGS = False 
 
@@ -274,7 +277,7 @@ class Generate_initial_triple:
         else: 
             if outer_mass_ratio_distr == 1:     # Kroupa 2001 
                 self.outer_mass = new_kroupa_mass_distribution(1, mass_min=outer_mass_min, mass_max=outer_mass_max)[0]
-            elif outer_mass_ratio_distr == 2:   # Galicher et al 2016
+            elif outer_mass_ratio_distr == 2:   # Galicher et al 2016  ? implement with actual mass ratio ?
                 self.outer_mass = powerlaw_distr( m_min= outer_mass_min, m_max= outer_mass_max, slope= -1.31)
             else: # flat distribution
                inner_mass_tot = self.inner_primary_mass + self.inner_secondary_mass
@@ -601,7 +604,7 @@ class Generate_initial_triple:
         U0_l2 = [0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 0.33, 0.82, 0.90]
         U0_l3 = [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
               
-        Mt = eggleton_mass_distr(min_mass, absolute_max_mass)
+        Mt = eggleton_mass_distr(min_mass_stellar, absolute_max_mass)
         U = np.random.uniform(0, 1)
         f_l0 = interp1d (U0_mass, U0_l0)
         U0 = f_l0(Mt.value_in(units.MSun)) #messy, but otherwise cluster crashes    
@@ -765,7 +768,7 @@ def evolve_model(inner_primary_mass_max, inner_primary_mass_min,inner_secondary_
 
 
 
-        if (min_mass > triple_system.inner_primary_mass) or (min_mass > triple_system.inner_secondary_mass) or (absolute_min_mass > triple_system.outer_mass):
+        if (min_mass_stellar > triple_system.inner_primary_mass) or (min_mass_stellar > triple_system.inner_secondary_mass) or (min_mass_BD > triple_system.outer_mass):
                 if REPORT:
                     print('non-star included: ', triple_system.inner_primary_mass, triple_system.inner_secondary_mass, triple_system.outer_mass)
                 continue
@@ -899,8 +902,8 @@ def test_initial_parameters(inner_primary_mass_max, inner_primary_mass_min,
                         stop_at_SN, SN_kick_distr, impulse_kick_for_black_holes,fallback_kick_for_black_holes,
                         stop_at_CPU_time, max_CPU_time, file_name, file_type, dir_plots):
 
-    if (inner_primary_mass_min < min_mass) or (inner_primary_mass_max > absolute_max_mass):
-        print('error: inner primary mass not in allowed range [', min_mass, ',', absolute_max_mass, ']')
+    if (inner_primary_mass_min < min_mass_stellar) or (inner_primary_mass_max > absolute_max_mass):
+        print('error: inner primary mass not in allowed range [', min_mass_stellar, ',', absolute_max_mass, ']')
         exit(1)
         
     if (inner_secondary_mass_max > absolute_max_mass) :
@@ -1048,7 +1051,7 @@ def parse_arguments():
                       help="inner primary mass distribution [Kroupa]")
 
     parser.add_option("--m_min", unit=units.MSun, 
-                      dest="inner_secondary_mass_min", type="float", default = absolute_min_mass,
+                      dest="inner_secondary_mass_min", type="float", default = min_mass_stellar,
                       help="minimum of inner secondary mass [%default]")
     #only used for inner_mass_ratio_distr == 1:# Kroupa 2001    
     parser.add_option("--m_max", unit=units.MSun, 
@@ -1058,7 +1061,7 @@ def parse_arguments():
                       dest="outer_mass_min", type="float", default = absolute_min_mass,
                       help="minimum of outer mass [%default]")
     parser.add_option("--l_max", unit=units.MSun, 
-                      dest="outer_mass_max", type="float", default = absolute_max_mass,
+                      dest="outer_mass_max", type="float", default = max_mass_SSO,
                       help="maximum of outer mass [%default]")
                       
     parser.add_option("--Q_max", dest="inner_mass_ratio_max", type="float", default = 1.0,

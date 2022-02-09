@@ -1177,7 +1177,7 @@ def compute_mass_evaporation(system, delta_t):
         if star.stellar_type.value in [10,11,12,13]:     # we have a WD, we integrate the radiance from 1 nm to 91.2 nm
             F_xuv = integrate.quad( blackbody, 1e-09, 9.12e-08, args=(star.temperature.value_in(units.K)))[0]
             L_XUV = 4*np.pi* star.radius.value_in(units.m)**2 * F_xuv * 1e+07   # last factor converts J to erg
-            print('M WD:', star.mass, '\t T WD:', star.temperature)
+            # print('M WD:', star.mass, '\t T WD:', star.temperature)
             return L_XUV    # erg/s
 
         else:
@@ -1207,9 +1207,9 @@ def compute_mass_evaporation(system, delta_t):
                 L_X = 1e-06 * L_bol  # 10**31 	# erg/s     #Flaccomio 2003
                 L_EUV = L_X 	# actually EUV should be stronger than X emission in this mass range
             else:
-                print("Star mass out of implemented range for evaporation")
-                L_X = 1e-04 * L_bol
-                L_EUV = 1e-04 * L_bol
+                print("Star mass out of implemented range for evaporation: default factor employed")
+                L_X = 1e-06 * L_bol
+                L_EUV = 1e-06 * L_bol
             
             return (L_X + L_EUV ) #|units.erg/units.s		# erg/s
 

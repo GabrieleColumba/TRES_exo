@@ -174,6 +174,9 @@ The full list of options is [default]:
         0: "Uniform distribution", #default
         1: "Kroupa IMF",
         2: "Galicher 2016 powerlaw (M^-1.31)",
+--l_max    upper limit for the outer mass  [?.]
+--l_min    lower limit for the outer mass  [0.0001]
+
 --A_max    upper limit for the inner semi-major axis [5e6 RSun]
 --A_min    lower limit for the inner semi-major axis [5]
 --A_distr  inner semi-major axcis option: 
