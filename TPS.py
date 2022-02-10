@@ -768,7 +768,7 @@ def evolve_model(inner_primary_mass_max, inner_primary_mass_min,inner_secondary_
 
 
 
-        if (min_mass_stellar > triple_system.inner_primary_mass) or (min_mass_stellar > triple_system.inner_secondary_mass) or (min_mass_BD > triple_system.outer_mass):
+        if (min_mass_stellar > triple_system.inner_primary_mass) or (min_mass_stellar > triple_system.inner_secondary_mass) or (absolute_min_mass > triple_system.outer_mass):
                 if REPORT:
                     print('non-star included: ', triple_system.inner_primary_mass, triple_system.inner_secondary_mass, triple_system.outer_mass)
                 continue
@@ -911,8 +911,8 @@ def test_initial_parameters(inner_primary_mass_max, inner_primary_mass_min,
         exit(1)
 
     
-    if (outer_mass_max > absolute_max_mass) :
-        print('error: outer mass not in allowed range [ < ', absolute_max_mass, ']')
+    if (outer_mass_min < absolute_min_mass) or (outer_mass_max > absolute_max_mass):
+        print('error: outer mass not in allowed range [', absolute_min_mass, ', ', absolute_max_mass, ']')
         exit(1)
     
 #     if (inner_secondary_mass_min < absolute_min_mass) :
