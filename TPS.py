@@ -165,6 +165,12 @@ def powerlaw_distr(m_min, m_max, slope):
     factor = (pow(m_max / m_min, slope1) - 1.0 )
     x = np.random.uniform(0,1)
     return m_min * (1.0 + factor*x) ** (1.0 / slope1)
+  
+def flat_distr_semi( lower, upper)
+    lower_RSun = lower.value_in(units.RSun)
+    upper_RSun = upper.value_in(units.RSun)
+    x = np.random.uniform( lower_RSun, upper_RSun)
+    return x | units.RSun
 
 class Generate_initial_triple:
     #-------
@@ -482,7 +488,7 @@ class Generate_initial_triple:
                    self.outer_semi = ((P0/2./np.pi)**2 * mass_tot*constants.G) ** (1./3.)                
 
             elif outer_semi_distr == 6:     # flat distr (uniform)
-                self.outer_semi = flat_distr( outer_semi_min, outer_semi_max)
+                self.outer_semi = flat_distr_semi( outer_semi_min, outer_semi_max)
             elif outer_semi_distr == 7:     # Galicher 2016: powerlaw, slope -0.61
                 self.outer_semi = powerlaw_distr( outer_semi_min, outer_semi_max, slope= -0.61)
 
