@@ -166,7 +166,7 @@ def powerlaw_distr(m_min, m_max, slope):
     x = np.random.uniform(0,1)
     return m_min * (1.0 + factor*x) ** (1.0 / slope1)
   
-def flat_distr_semi( lower, upper)
+def flat_distr_semi( lower, upper):
     lower_RSun = lower.value_in(units.RSun)
     upper_RSun = upper.value_in(units.RSun)
     x = np.random.uniform( lower_RSun, upper_RSun)
