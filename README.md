@@ -29,7 +29,26 @@ This document contains the following parts:
 TRES makes use of the Astrophysical Multipurpose Software Environment (AMUSE) See https://amusecode.github.io/ for how to install AMUSE. 
 Note that for standard TRES usage, the only necessary community code to install is SeBa. 
 
-After compiling AMUSE, TRES needs to be compiled by means of it Makefile as following:
+Thus, after installing the AMUSE pre-requisites, we can simply install the minimal framework and then add SeBa:
+
+```
+
+pip install [--user] amuse-framework
+pip install [--user] amuse-<seba>
+
+```
+
+After compiling AMUSE, TRES needs to be installed and compiled by means of the Makefile as following:
+
+First, clone the TRES github repository:
+
+```
+
+git clone https://github.com/amusecode/TRES.git
+
+```
+
+Then, from the root of the cloned respository compile the Makefile:
 
 ```
 
@@ -273,7 +292,26 @@ Normally TRES adds the evolution history of individual triples in the TRES.hdf f
 
 ## Reducing the TRES output
 
-The python script rdc_TRES.py reduce the TRES hdf output to a txt file keeping only selected parameters. These can be adjusted to your liking in the function rdc(). Currently there are 6 lines for every snapshot. The columns represent:
+The python script rdc_TRES.py reduce the TRES hdf output. The full list of available options is [default]:
+
+```
+-f      root of the name of the input file [TRES]
+-F      extension of input file [hdf5]
+-S      printing style [0] 
+```
+
+Which parameters are printed and in which style can be adjusted to your liking in the function rdc().
+Currently there are 3 options settable on the command line via -S (print_style):
+```
+0 TRES standard - selected parameters
+1 Full - all possible parameters are printed
+2 Selected parameters are printed in a human readible way
+```
+
+
+
+For option 2: 
+6 lines are printed for every snapshot. The columns represent:
 
 General information on the system: 
 ```
@@ -290,6 +328,11 @@ Line 3: 'st:', is_donor, stellar_type, mass, spin_angular_frequency, radius, cor
         | is_donor, stellar_type, mass, spin_angular_frequency, radius, core mass
         | is_donor, stellar_type, mass, spin_angular_frequency, radius, core mass
 ```        
+
+
+For option 0: 
+One line is printed for every snapshot with the parameters in the same order as above. The units are Solar Mass, Solar radius, Myr. 
+
 
 The stellar types in TRES follow the standard terminology of AMUSE:
 ```

@@ -1,44 +1,33 @@
-# User guide installation TRES
-This is a short additional document that will help guide you through the installation and compilation process of TRES in some more detail, since users may want to use TRES for slightly different purposes. For a more complete guide on how to use TRES, please have a look at the [README.md](https://github.com/amusecode/TRES/blob/main/README.md) file.
+# TRES as developer
+This is a short additional document that will help guide you through the installation and compilation process of TRES as a developer. For a more complete guide on how to use TRES, please have a look at the [README.md](https://github.com/amusecode/TRES/blob/main/README.md) file.
 
 For the installation, it is important to know that TRES combines two different codes: SeBa, which is a stellar evolution code, and a dynamical code. The dynamical code is already integrated into TRES and thus doesn't need to be installed separately. SeBa however, needs to be installed through the AMUSE framework. We will explain how to do this shortly, but just make sure to satisfy the [AMUSE pre-requisites](https://amuse.readthedocs.io/en/latest/install/howto-install-AMUSE.html) and have installed the necessary python modules beforehand.
 
-If you wish to use TRES solely for simulations, without making any changes to the stellar evolution code, have a look here: [TRES as user](#TRES-as-user).
-
-If instead you do want to be able to make changes, have a look here: [TRES as developer](#TRES-as-developer). 
-
-In case the you have access to a computer cluster, [Run TRES on cluster](#Run-TRES-on-cluster) gives some information on running TRES with slurm.
-
-### TRES as user
-First we need to install AMUSE along with SeBa. Since we don't need all the codes from the AMUSE framework, we can just install the minimal framework and then add SeBa:
-
-```
-pip install [--user] amuse-framework
-pip install [--user] amuse-<seba>
-```
-
-For clarity, this will not actually install the SeBa code, so it is not possible to change the stellar physics.
-
-TRES can simply be installed by cloning the github repository in the terminal:
-
-```
-git clone https://github.com/amusecode/TRES.git
-```
-
-Now you should be good to go!
+In case the you have access to a computer cluster, [Run TRES on cluster](#Run-TRES-on-cluster) gives some additional information on running TRES with slurm.
  
-### TRES as developer
+### Installation TRES
 If you are interested in applying changes to the stellar evolution code SeBa, the code should be locally installed. To do this, you will have to install AMUSE directly from the source code:
 
 ```
 git clone https://github.com/amusecode/amuse.git
 ```
 
-Then, SeBa can be installed with:
+It is important to install the amuse packages using the developer mode. We can do this by typing the following command in the root of the cloned repository:
 
 ```
 pip install -e .
+```
+
+Then, SeBa can be build with:
+
+```
 make seba.code
+```
+
+If instead you wish to build all the community codes that amuse provides, we can write:
+
+```
+python setup.py develop_build
 ```
 
 Now, you should be able to navigate to a directory called "amuse/src/amuse/community/seba", which contains the complete evolution code. To compile the code, write (exluding the comments preceded by a "#"):
@@ -46,11 +35,9 @@ Now, you should be able to navigate to a directory called "amuse/src/amuse/commu
 ```
 make clean
 make               # Here we compile all the C files
-cd src/SeBa/dstar
-make               # Here we make the actual executable file called "SEBA"
 ```
 
-It is very important to know that anytime the code is compiled, the source code will be downloaded again, meaning any changes will be overwritten. To prevent this from happening, we need to comment out a line in the Makefile. In line 47, put a "#" before "download src/SeBa".
+It is very important to know that anytime the code is compiled, the source code will be downloaded again, meaning any changes to SeBa will be overwritten. To prevent this from happening, we need to comment out a line in the Makefile. In line 47, put a "#" before "download src/SeBa".
 
 TRES can simply be installed by cloning the github repository in the terminal:
 
@@ -107,6 +94,17 @@ git push --set-upstream upstream (branch)
 
 
 Manage who has access to your fork via github:  "settings -> manage access -> invite a collaborator"
+
+### Developement tips & tricks
+To receive more output, there are a number of 'REPORT' statements (REPORT_DEBUG, REPORT_DT, REPORT_SN_EVOLUTION, REPORT_TRIPLE_EVOLUTION) that can be set to True on the top of TRES.py. For the most extensive and generic option choose REPORT_DEBUG. This option will also create pdfs a txt file with output at every global (TRES) timestep, as well as create pdf of the time evolution of many parameters. 
+
+To receive more output from SeBa, do the following: in setup_stellar_code(), comment out self.stellar_code = SeBa() and uncomment self.stellar_code = SeBa(redirection='none'). 
+
+To receive more output from the secular code, there are two options. 1) in setup_secular_code(), comment out self.stellar_code = SecularTriple() and uncomment self.stellar_code = SecularTriple(redirection='none'). 2) in setup_secular_code(), set self.secular_code.parameters.verbose to True. 
+
+To reduce the global (TRES) timestep (aka get more timestamps in the TRES terminal output, see above) set the maximum_time_step on the top of TRES.py
+
+To use the detailed gyration radius and apsidal motion constant from SeBa, set GET_GYRATION_RADIUS_FROM_STELLAR_CODE and/or GET_AMC_FROM_STELLAR_CODE to True on the top of TRES.py
 
 
 ### Run TRES on cluster
