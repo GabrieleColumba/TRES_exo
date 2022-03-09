@@ -4,6 +4,7 @@ from amuse.io import read_set_from_file
 from amuse.support.console import set_printing_strategy
 import numpy as np
 
+minimum_time_step = 1.e-9 |units.Myr
 
 
 bin_type = {    
@@ -42,8 +43,8 @@ def print_particle(particle):
             print_particle(particle.child2)                
        
 
-def rdc(file_name_root, file_type, print_style):
-    print(lib_print_style[print_style])
+def rdc(file_name_root, file_type, print_style, print_init, line_number):
+
 
     f_type = file_type
     if file_type == "hdf5":
@@ -57,6 +58,22 @@ def rdc(file_name_root, file_type, print_style):
 #    counter = list(enumerate(triple.history))[0][1].number 
 
 
+    if print_init:
+        for i, triple in enumerate(triple.history):
+            if i == line_number:
+                print('amuse TRES.py ', end = '' )
+                print(' -M ', triple[0].child2.child1.mass.value_in(units.MSun), ' -m ', triple[0].child2.child2.mass.value_in(units.MSun), ' -l ', triple[0].child1.mass.value_in(units.MSun), end = '')
+                print(' -A ', triple[0].child2.semimajor_axis.value_in(units.RSun), ' -a ', triple[0].semimajor_axis.value_in(units.RSun), end = '')
+                print(' -E ', triple[0].child2.eccentricity, ' -e ', triple[0].eccentricity, end = '')
+                print(' -G ', triple[0].child2.argument_of_pericenter, ' -g ', triple[0].argument_of_pericenter, end = '')
+                print(' -I ', triple[0].relative_inclination, end = '\t')
+                
+                if triple[0].time > minimum_time_step:
+                    print('Warning: these parameters do not represent a system at birth (ZAMS).')
+
+        return
+
+    print(lib_print_style[print_style])
     for i, triple in enumerate(triple.history):
 #        print(triple[0].number, triple[0].time)
 #        if triple[0].number == counter:
@@ -103,6 +120,11 @@ def parse_arguments():
     parser.add_option("-S", dest="print_style", type="int", default = 2,
                       help="print style [%default]") 
                        
+    parser.add_option("--print_init", dest="print_init", action="store_true", default = False, 
+                      help="print initial conditions for re running [%default]")
+    parser.add_option("-l", dest="line_number", type="int", default = 0,
+                      help="line number for printing initial conditions [%default]") #will only do something when print_init = True
+
 
                       
     options, args = parser.parse_args()

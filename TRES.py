@@ -292,6 +292,18 @@ class Triple_Class:
             
     #-------
     #setup community codes
+    
+    def copy_from_stellar(self):
+#        self.channel_from_stellar.copy()        
+        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass",  "stellar_type", "luminosity", "wind_mass_loss_rate",  "temperature"]) 
+        if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
+            self.channel_from_stellar.copy_attributes(["gyration_radius"]) 
+        if GET_AMC_FROM_STELLAR_CODE:
+            self.channel_from_stellar.copy_attributes(["apsidal_motion_constant"]) 
+            
+            
+            
+                
     def setup_stellar_code(self, metallicity, stars):
         self.stellar_code = SeBa()
 #        self.stellar_code = SeBa(redirection='none')
@@ -303,12 +315,7 @@ class Triple_Class:
         self.stellar_code.particles.add_particles(stars)
         self.channel_from_stellar = self.stellar_code.particles.new_channel_to(stars)
         self.channel_to_stellar = stars.new_channel_to(self.stellar_code.particles)
-#        self.channel_from_stellar.copy()
-        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate",  "temperature"]) 
-        if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
-            self.channel_from_stellar.copy_attributes(["gyration_radius"]) 
-        if GET_AMC_FROM_STELLAR_CODE:
-            self.channel_from_stellar.copy_attributes(["apsidal_motion_constant"]) 
+        self.copy_from_stellar()
 
 
     def setup_secular_code(self, triple_set):
@@ -1666,12 +1673,14 @@ class Triple_Class:
                 v_kick *= (kanonical_neutron_star_mass / star.mass)
 #                print(star.mass, kanonical_neutron_star_mass)
             if self.fallback_kick_for_black_holes and star.stellar_type == 14|units.stellar_type:
-                self.channel_from_stellar.copy_attributes(["fallback"]) 
-                v_kick *= (1-star.fallback)
-#                print(star.fallback)
-#                del star.fallback #doesn't work
-#                delattr(star, "fallback")  #doesn't work                
-                    
+#                self.channel_from_stellar.copy_attributes(["fallback"]) 
+#                v_kick *= (1-star.fallback)
+
+                star_in_stellar_code = star.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]                
+                fallback = star_in_stellar_code.get_fallback() 
+                v_kick *= (1-fallback)
+#                print(fallback)                    
+
         return v_kick
 
     def save_mean_anomalies_at_SN(self, inner_mean_anomaly, outer_mean_anomaly, stellar_system = None):
@@ -1735,6 +1744,16 @@ class Triple_Class:
         bin.child1.mass = bin.child1.previous_mass 
         bin.child2.mass = bin.child2.previous_mass
         star.mass = star.previous_mass 
+        
+        #reset the stellar types to before SN 
+        #to get the stellar types correct for the snapshot
+        bin_child1_proper_stellar_type = bin.child1.stellar_type
+        bin_child2_proper_stellar_type = bin.child2.stellar_type
+        star_proper_stellar_type = star.stellar_type
+        
+        bin.child1.stellar_type = bin.child1.previous_stellar_type
+        bin.child2.stellar_type = bin.child2.previous_stellar_type
+        star.stellar_type = star.previous_stellar_type                
  
         self.save_snapshot()                    
  
@@ -1776,6 +1795,10 @@ class Triple_Class:
         bin.child2.mass = bin.child2.previous_mass - dm2
         star.mass = star.previous_mass - dm3
 
+        #reset the stellar types to after SN 
+        bin.child1.stellar_type = bin_child1_proper_stellar_type
+        bin.child2.stellar_type = bin_child2_proper_stellar_type
+        star.stellar_type =  star_proper_stellar_type
 
 
         if REPORT_SN_EVOLUTION:
@@ -1978,12 +2001,7 @@ class Triple_Class:
         
         self.stellar_code.evolve_model(self.triple.time)
         
-#                    self.channel_from_stellar.copy()
-        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate",  "temperature"])                       
-        if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
-            self.channel_from_stellar.copy_attributes(["gyration_radius"]) 
-        if GET_AMC_FROM_STELLAR_CODE:
-            self.channel_from_stellar.copy_attributes(["apsidal_motion_constant"]) 
+        self.copy_from_stellar()
         self.update_stellar_parameters()          
                 
         if nr_unsuccessfull > 1:
@@ -2018,11 +2036,7 @@ class Triple_Class:
             if REPORT_TRIPLE_EVOLUTION or REPORT_DEBUG:
                 print('\n\ntime:', self.triple.time, self.has_donor())
             self.stellar_code.evolve_model(self.triple.time)
-            self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate",  "temperature"])                           
-            if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
-                self.channel_from_stellar.copy_attributes(["gyration_radius"]) 
-            if GET_AMC_FROM_STELLAR_CODE:
-                self.channel_from_stellar.copy_attributes(["apsidal_motion_constant"]) 
+            self.copy_from_stellar()
             self.update_stellar_parameters()              
             self.check_RLOF()                    
                     
@@ -2317,11 +2331,7 @@ class Triple_Class:
                     planet_in_stellar_code = planet.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
                     planet_in_stellar_code.change_mass(-1*mass_lost, 0.|units.yr)
 
-                self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"])  
-                if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
-                    self.channel_from_stellar.copy_attributes(["gyration_radius"]) 
-                if GET_AMC_FROM_STELLAR_CODE:
-                    self.channel_from_stellar.copy_attributes(["apsidal_motion_constant"]) 
+                self.copy_from_stellar()
                 self.update_stellar_parameters()     
          
                 successfull_step, nr_unsuccessfull, star_unsuccessfull = self.safety_check_time_step() 
@@ -2343,11 +2353,7 @@ class Triple_Class:
 #                    print('RLOF:', self.triple.child2.child1.is_donor, self.triple.bin_type , self.triple.child2.bin_type )
 
                     self.stellar_code.particles.recall_memory_one_step()
-                    self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate",  "temperature"])                           
-                    if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
-                        self.channel_from_stellar.copy_attributes(["gyration_radius"]) 
-                    if GET_AMC_FROM_STELLAR_CODE:
-                        self.channel_from_stellar.copy_attributes(["apsidal_motion_constant"]) 
+                    self.copy_from_stellar()
                     self.update_stellar_parameters()                              
                     self.refresh_memory()                     
                     #note that 'previous' parameters cannot be reset 

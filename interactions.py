@@ -10,6 +10,7 @@ REPORT_MASS_TRANSFER_STABILITY = False
 
 #constants
 numerical_error  = 1.e-6
+small_numerical_error  = 1.e-10
 minimum_eccentricity = 1.e-5
 
 which_common_envelope = 2
@@ -216,7 +217,7 @@ def perform_inner_collision(self):
     
         #merger
         donor_in_stellar_code.merge_with_other_star(accretor_in_stellar_code) 
-        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"                           
+        self.copy_from_stellar()
               
         donor.moment_of_inertia_of_star = self.moment_of_inertia(donor)        
     
@@ -283,7 +284,7 @@ def perform_inner_merger(bs, donor, accretor, self):
             
     #merger
     donor_in_stellar_code.merge_with_other_star(accretor_in_stellar_code) 
-    self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"                           
+    self.copy_from_stellar()
     
     donor.moment_of_inertia_of_star = self.moment_of_inertia(donor)        
     
@@ -372,8 +373,9 @@ def common_envelope_angular_momentum_balance(bs, donor, accretor, self):
         donor_in_stellar_code = donor.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
         #reduce_mass not subtrac mass, want geen adjust_donor_radius
         #check if star changes type     
-        donor_in_stellar_code.change_mass(-1*(donor.mass-donor.core_mass), 0.|units.yr)    
-        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"                           
+        donor_in_stellar_code.change_mass(-1*(donor.mass-donor.core_mass+(small_numerical_error|units.MSun)), 0.|units.yr)    
+        self.copy_from_stellar()
+
         donor.moment_of_inertia_of_star = self.moment_of_inertia(donor)        
         accretor.moment_of_inertia_of_star = self.moment_of_inertia(accretor)        
 
@@ -391,7 +393,7 @@ def common_envelope_angular_momentum_balance(bs, donor, accretor, self):
 
     self.check_RLOF()       
     if self.has_donor():
-        print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
+        print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.child1.radius, self.triple.child2.child2.radius,self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
         print('after adjust_triple_after_ce_in_inner_binary: RLOF')
         exit(1)
@@ -399,8 +401,8 @@ def common_envelope_angular_momentum_balance(bs, donor, accretor, self):
     donor.is_donor = False
     bs.is_mt_stable = True
     bs.bin_type = bin_type['detached']
-    self.instantaneous_evolution = True #skip secular evolution                
-
+    self.instantaneous_evolution = True #skip secular evolution    
+    
     return True
     
 #Following Webbink 1984
@@ -442,8 +444,9 @@ def common_envelope_energy_balance(bs, donor, accretor, self):
         donor_in_stellar_code = donor.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
         #reduce_mass not subtrac mass, want geen adjust_donor_radius
         #check if star changes type     
-        donor_in_stellar_code.change_mass(-1*(donor.mass-donor.core_mass), 0.|units.yr)    
-        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"                           
+        donor_in_stellar_code.change_mass(-1*(donor.mass-donor.core_mass+(small_numerical_error|units.MSun)), 0.|units.yr)    
+        self.copy_from_stellar()
+
         donor.moment_of_inertia_of_star = self.moment_of_inertia(donor)        
         accretor.moment_of_inertia_of_star = self.moment_of_inertia(accretor)        
 
@@ -513,10 +516,12 @@ def double_common_envelope_energy_balance(bs, donor, accretor, self):
         #check if star changes type     
 
         donor_in_stellar_code = donor.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
-        donor_in_stellar_code.change_mass(-1*(donor.mass-donor.core_mass), 0.|units.yr)    
+        donor_in_stellar_code.change_mass(-1*(donor.mass-donor.core_mass+(small_numerical_error|units.MSun)), 0.|units.yr)    
         accretor_in_stellar_code = accretor.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
         accretor_in_stellar_code.change_mass(-1*(accretor.mass-accretor.core_mass), 0.|units.yr)    
-        self.channel_from_stellar.copy_attributes(["age", "mass", "core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"                           
+        self.copy_from_stellar()
+
+
         donor.moment_of_inertia_of_star = self.moment_of_inertia(donor)        
         accretor.moment_of_inertia_of_star = self.moment_of_inertia(accretor)        
 
@@ -709,7 +714,7 @@ def stable_mass_transfer(bs, donor, accretor, self):
     if REPORT_FUNCTION_NAMES:
         print(bs.mass_transfer_rate, dt, dm_desired)
     donor_in_stellar_code = donor.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
-    donor_in_stellar_code.change_mass(dm_desired, dt)
+    donor_in_stellar_code.change_mass(dm_desired+(small_numerical_error|units.MSun), dt)
     
     # dm != dm_desired e.g. when the envelope of the star becomes empty
     dm = donor_in_stellar_code.mass - Md
@@ -730,7 +735,8 @@ def stable_mass_transfer(bs, donor, accretor, self):
 
     #to adjust radius to mass loss and increase  
     self.stellar_code.evolve_model(self.triple.time)
-    self.channel_from_stellar.copy_attributes(["age", "mass","core_mass", "radius", "core_radius", "convective_envelope_radius",  "convective_envelope_mass", "stellar_type", "luminosity", "wind_mass_loss_rate", "temperature"]) #"gyration_radius_sq"  
+    self.copy_from_stellar()
+
     self.update_stellar_parameters()
             
     Md_new = donor.mass
