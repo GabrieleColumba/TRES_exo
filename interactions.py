@@ -1172,17 +1172,17 @@ def compute_mass_evaporation(system, delta_t):
 
         def blackbody(wavel, T):
             '''
-            compute the specific flux of a BB, in SI units
+            compute the specific flux of a BB, in erg/s /m3 (/sterad)
             '''
-            h = constants.h.value_in(units.erg * units.s)
-            c = constants.c.value_in(units.m/units.s)
-            KB = constants.kB.value_in(units.J/units.K)
-            B_l = np.float128(2*h* c**2 / wavel**5) / (np.exp( h*c/(wavel*KB*T), dtype=np.float128) - 1)
+            h = constants.h.value_in( units.erg * units.s )
+            c = constants.c.value_in( units.m / units.s )
+            KB = constants.kB.value_in( units.erg / units.K )
+            B_l = (2* h * c**2 / wavel**5) / (np.exp( h*c/(wavel*KB*T), dtype=np.float128) - 1)
             return B_l
 
-        if star.stellar_type.value in [10,11,12,13]:     # we have a WD, we integrate the radiance from 1 nm to 91.2 nm
+        if star.stellar_type.value in [10,11,12,13]:     # we have a WD, we integrate a Black Body from 1 nm to 91.2 nm
             F_xuv = integrate.quad( blackbody, 1e-09, 9.12e-08, args=(star.temperature.value_in(units.K)))[0]
-            L_XUV = 4*np.pi* star.radius.value_in(units.m)**2 * F_xuv * 1e+07   # last factor converts J to erg
+            L_XUV = 4*np.pi**2 * star.radius.value_in(units.m)**2 * F_xuv
             # print('M WD:', star.mass, '\t T WD:', star.temperature)
             return L_XUV    # erg/s
 
