@@ -396,8 +396,8 @@ def common_envelope_angular_momentum_balance(bs, donor, accretor, self):
         print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.child1.radius, self.triple.child2.child2.radius,self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
         print('after adjust_triple_after_ce_in_inner_binary: RLOF')
-	print('\n Envelope mass of donor:' , donor.mass - donor.core_mass)
-	print('\n Envelope mass of accretor:' , accretor.mass - accretor.core_mass)
+        print('\n Envelope mass of donor:' , donor.mass - donor.core_mass)
+        print('\n Envelope mass of accretor:' , accretor.mass - accretor.core_mass)
         exit(1)
         
     donor.is_donor = False
