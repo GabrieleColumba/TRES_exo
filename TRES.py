@@ -822,6 +822,17 @@ class Triple_Class:
             M1 = self.get_mass(stellar_system.child1)        
             M2 = self.get_mass(stellar_system.child2)
             return M1 + M2 
+
+    def get_size(self, stellar_system = None):
+        if stellar_system == None:
+            stellar_system = self.triple
+
+        if stellar_system.is_star:
+            return stellar_system.radius
+        else:
+            return stellar_system.semimajor_axis
+ 
+
     #-------
 
     #-------
@@ -1307,7 +1318,7 @@ class Triple_Class:
     
         R_div_a = star.radius/semi        
         spin = star.spin_angular_frequency
-        k_div_T_tides = tidal_friction_constant(star.stellar_type, star.mass, m_comp, semi, star.radius, star.convective_envelope_mass, star.convective_envelope_radius, star.luminosity, spin)
+        k_div_T_tides = tidal_friction_constant(star.stellar_type, star.mass, m_comp, semi, star.radius, star.convective_envelope_mass, star.convective_envelope_radius, star.luminosity, spin, star.gyration_radius, star.apsidal_motion_constant)
         n = corotating_spin_angular_frequency_binary(semi, star.mass, m_comp) # mean orbital angular speed
 
         e_dot = -27.0*(1.0+m_comp/star.mass)*(m_comp/star.mass) * R_div_a**6 * k_div_T_tides * R_div_a**2 *eccentricity* (l**-13.0) * (f_tides3 - 11.0/18.0*(l**3)*f_tides4*(spin/n))
@@ -1463,7 +1474,7 @@ class Triple_Class:
         #tides - ADD ALSO DURING MT
         time_step_tides = np.inf |units.Myr 
 	#interesting alternative, slows down code 
-#         if self.secular_code.parameters.include_inner_tidal_terms or self.secular_code.parameters.include_outer_tidal_terms:    
+#        if self.secular_code.parameters.include_inner_tidal_terms or self.secular_code.parameters.include_outer_tidal_terms:    
 #             time_step_tides = self.determine_time_step_tides()  	
                 
         if REPORT_DT or REPORT_DEBUG:
@@ -1836,6 +1847,8 @@ class Triple_Class:
                 print("Outer orbit dissociated by SN at time = ",self.triple.time) 
             self.triple.bin_type = bin_type['disintegrated']   
 
+	    # When the outer orbit has disintegrated, change its orbital parameters such
+	    # that it has no influence on the inner orbit for the remainder of the simulation
             self.triple.semimajor_axis = 1e100|units.RSun
             self.triple.eccentricity = 0
 
