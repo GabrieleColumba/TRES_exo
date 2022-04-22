@@ -4,7 +4,7 @@ Designed to work together with TPS
 
 Adrian Hamers 2015
 """
-
+import sys
 from amuse.community import *
 from amuse.units import units,constants
 

@@ -112,7 +112,7 @@ lib_SN_kick_distr = {0: "No kick",
 
 
 import TRES as TRES
-
+import sys
 from amuse.units.optparse import OptionParser
 from amuse.units import units, constants
 from amuse.support.console import set_printing_strategy
