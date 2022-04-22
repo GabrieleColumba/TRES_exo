@@ -1058,11 +1058,11 @@ def parse_arguments():
                       help="inner primary mass distribution [Kroupa]")
 
     parser.add_option("--m_min", "--M2_min",unit=units.MSun, 
-                      dest="inner_secondary_mass_min", type="float", default = absolute_min_mass,
+                      dest="inner_secondary_mass_min", type="float", default = min_mass_stellar,
                       help="minimum of inner secondary mass [%default]")
     #only used for inner_mass_ratio_distr == 1:# Kroupa 2001    
     parser.add_option("--m_max", "--M2_max",unit=units.MSun, 
-                      dest="inner_secondary_mass_max", type="float", default = min_mass_stellar,
+                      dest="inner_secondary_mass_max", type="float", default = absolute_max_mass,
                       help="maximum of inner secondary mass [%default]") 
     parser.add_option("--l_min", "--M3_min",unit=units.MSun, 
                       dest="outer_mass_min", type="float", default = absolute_min_mass,
