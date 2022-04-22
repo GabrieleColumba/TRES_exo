@@ -130,7 +130,8 @@ class SecularTripleInterface(CodeInterface):
         function.addParameter('a_in_output', dtype='float64', direction=function.OUT) 
         function.addParameter('a_out_output', dtype='float64', direction=function.OUT) 
         function.addParameter('e_in_output', dtype='float64', direction=function.OUT) 
-        function.addParameter('e_out_output', dtype='float64', direction=function.OUT) 
+        function.addParameter('e_out_output', dtype='float64', direction=function.OUT)
+        function.addParameter('delta_e_in_output', dtype='float64', direction=function.OUT)
         function.addParameter('INCL_in_output', dtype='float64', direction=function.OUT)
         function.addParameter('INCL_out_output', dtype='float64', direction=function.OUT)
         function.addParameter('INCL_in_out_output', dtype='float64', direction=function.OUT)
@@ -1200,6 +1201,7 @@ class SecularTriple(InCodeComponentImplementation):
                 unit_l,                     ### a_out_output
                 object.NO_UNIT,             ### e_in_output
                 object.NO_UNIT,             ### e_out_output
+                object.NO_UNIT,             ### delta_e_in_output
                 object.NO_UNIT,             ### INCL_in_output
                 object.NO_UNIT,             ### INCL_out_output
                 object.NO_UNIT,             ### INCL_in_out_output
@@ -1586,7 +1588,7 @@ class SecularTriple(InCodeComponentImplementation):
             ### solve system of ODEs ###
             m1,m2,m3,R1,R2,R3, \
             spin_angular_frequency1,spin_angular_frequency2,spin_angular_frequency3, \
-            a_in,a_out,e_in,e_out, \
+            a_in,a_out,e_in,e_out, delta_e_in, \
             INCL_in,INCL_out,INCL_in_out, \
             AP_in,AP_out,LAN_in,LAN_out, \
             end_time_cvode,CVODE_flag,root_finding_flag = self.evolve(*args)
@@ -1699,6 +1701,7 @@ class SecularTriple(InCodeComponentImplementation):
             outer_binary.argument_of_pericenter = AP_out
             inner_binary.longitude_of_ascending_node = LAN_in
             outer_binary.longitude_of_ascending_node = LAN_out
+            inner_binary.delta_e_in = delta_e_in
 
             if self.evolve_further_after_root_was_found == True:
                 original_time_step = self.time_step ### time-step given from triple.py
@@ -1779,7 +1782,8 @@ class SecularTriple(InCodeComponentImplementation):
             print( 'Egg',R_L_eggleton(a_in,m1/m2),R_L_eggleton(a_in,m2/m1),R_L_eggleton(a_out,m3/(m1+m2)))
             print( 'ratios',R_L_star1/R_L_eggleton(a_in,m1/m2),R_L_star2/R_L_eggleton(a_in,m2/m1),R_L_star3/R_L_eggleton(a_out,m3/(m1+m2)))
 
-        return R_L_eggleton(a_in,m1/m2),R_L_eggleton(a_in,m2/m1),R_L_eggleton(a_out,m3/(m1+m2))        
+#        return R_L_eggleton(a_in,m1/m2),R_L_eggleton(a_in,m2/m1),R_L_eggleton(a_out,m3/(m1+m2))        
+        return R_L_eggleton(rp_in,m1/m2),R_L_eggleton(rp_in,m2/m1),R_L_eggleton(rp_out,m3/(m1+m2))        
 #        return R_L_star1,R_L_star2,R_L_star3
 
     def compute_effect_of_SN_on_triple(self,Vkick_1,Vkick_2,Vkick_3,delta_m_1,delta_m_2,delta_m_3,inner_true_anomaly,outer_true_anomaly):
