@@ -98,7 +98,7 @@ def rdc(file_name_root, file_type, print_style, print_init, line_number):
 #            print('child2',triple[0].child2)
 #            print('child2.child1',triple[0].child2.child1)
 #            print('child2.child2',triple[0].child2.child2)
-            exit(0)
+            sys.exit(0)
         else:
 
             print(i, triple[0].time.value_in(units.Myr), triple[0].number, triple[0].relative_inclination, int(triple[0].dynamical_instability), int(triple[0].kozai_type), int(triple[0].error_flag_secular), end = '\t')

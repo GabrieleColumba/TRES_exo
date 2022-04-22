@@ -2016,7 +2016,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             wind_mass_loss_rate_star3 = star3.wind_mass_loss_rate
         except AttributeError:
             print( 'SecularTriple -- mass time_derivative_of_mass is needed for all three stars if include_linear_mass_change==True! exiting')
-            exit(-1)
+            sys.exit(-1)
     time_derivative_of_radius_star1=time_derivative_of_radius_star2=time_derivative_of_radius_star3 = 0.0 | units.RSun/units.s
     if parameters.include_linear_radius_change == True:
         try:
@@ -2025,7 +2025,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             time_derivative_of_radius_star3 = star3.time_derivative_of_radius
         except AttributeError:
             print( 'SecularTriple -- time_derivative_of_radius is needed for all three stars if include_linear_radius_change==True! exiting')
-            exit(-1)
+            sys.exit(-1)
 
     ### mass variation parameters ###
     star1_is_donor = star2_is_donor = star3_is_donor = False
@@ -2043,7 +2043,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             inner_accretion_efficiency_wind_child2_to_child1 = inner_binary.accretion_efficiency_wind_child2_to_child1
         except AttributeError:
             print( "SecularTriple -- more attributes required for inner wind! exiting")
-            exit(-1)
+            sys.exit(-1)
     if parameters.include_outer_wind_terms == True:
         try:
             wind_mass_loss_rate_star3 = star3.wind_mass_loss_rate
@@ -2053,7 +2053,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             
         except AttributeError:
             print( "SecularTriple -- more attributes required for outer wind! exiting")
-            exit(-1)
+            sys.exit(-1)
     if parameters.include_inner_RLOF_terms == True:
         try:
             star1_is_donor = star1.is_donor
@@ -2063,7 +2063,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             inner_specific_AM_loss_mass_transfer = inner_binary.specific_AM_loss_mass_transfer
         except AttributeError:
             print( "SecularTriple -- more attributes required for inner RLOF! exiting")
-            exit(-1)
+            sys.exit(-1)
     if parameters.include_outer_RLOF_terms == True:
         try:
             star3_is_donor = star3.is_donor            
@@ -2072,7 +2072,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             outer_specific_AM_loss_mass_transfer = outer_binary.specific_AM_loss_mass_transfer
         except AttributeError:
             print( "SecularTriple -- more attributes required for outer RLOF! exiting")
-            exit(-1)
+            sys.exit(-1)
 
     ### RLOF checks ###
     spin_angular_frequency1 = spin_angular_frequency2 = spin_angular_frequency3 = 0.0 | 1.0/units.s
@@ -2083,13 +2083,13 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             spin_angular_frequency2 = star2.spin_angular_frequency
         except AttributeError:
             print( "SecularTriple -- more attributes required for inner RLOF check! exiting")
-            exit(-1)
+            sys.exit(-1)
     if parameters.check_for_outer_RLOF == True:
         try:
             spin_angular_frequency3 = star3.spin_angular_frequency
         except AttributeError:
             print( "SecularTriple -- more attributes required for outer RLOF check! exiting")
-            exit(-1)
+            sys.exit(-1)
 
     ### magnetic braking ###
     if parameters.include_magnetic_braking_terms == True:
@@ -2105,7 +2105,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             gyration_radius_star3 = star3.gyration_radius                    
         except AttributeError:
             print( "SecularTriple -- more attributes required for magnetic braking terms! exiting")
-            exit(-1)
+            sys.exit(-1)
 
     ### spin-radius-mass coupling ###
     moment_of_inertia_star1 = moment_of_inertia_star2 = moment_of_inertia_star3 = 0.0 | units.MSun*units.RSun**2
@@ -2134,7 +2134,7 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
 #            inner_spin_angular_momentum_wind_accretion_efficiency_child2_to_child1 = inner_binary.spin_angular_momentum_wind_accretion_efficiency_child2_to_child1
         except AttributeError:
             print( "SecularTriple -- more attributes required for spin-radius-mass coupling terms! exiting")
-            exit(-1)
+            sys.exit(-1)
 
 
     ### tides ###
@@ -2174,27 +2174,27 @@ def extract_data_and_give_args(self,triple,inner_binary,outer_binary,star1,star2
             
         except AttributeError:
             print( "SecularTriple -- more attributes required for tides! exiting")
-            exit(-1)
+            sys.exit(-1)
 
         if (m1_convective_envelope.value_in(unit_m)<0):
             print( 'SecularTriple -- m1_convective_envelope must be positive! exiting')
-            exit(-1)
+            sys.exit(-1)
         if (m2_convective_envelope.value_in(unit_m)<0):
             print( 'SecularTriple -- m2_convective_envelope must be positive! exiting')
-            exit(-1)
+            sys.exit(-1)
         if (m3_convective_envelope.value_in(unit_m)<0):
             print( 'SecularTriple -- m3_convective_envelope must be positive! exiting')
-            exit(-1)
+            sys.exit(-1)
 
         if (R1_convective_envelope.value_in(unit_l)<0):
             print( 'SecularTriple -- R1_convective_envelope must be positive! exiting')
-            exit(-1)
+            sys.exit(-1)
         if (R2_convective_envelope.value_in(unit_l)<0):
             print( 'SecularTriple -- R2_convective_envelope must be positive! exiting')
-            exit(-1)
+            sys.exit(-1)
         if (R3_convective_envelope.value_in(unit_l)<0):
             print( 'SecularTriple -- R3_convective_envelope must be positive! exiting')
-            exit(-1)
+            sys.exit(-1)
 
     if self.parameters.verbose == True:
         print( 'SecularTriple -- initialization; a_in/AU=',a_in.value_in(units.AU),'; e_in=',e_in,'e_out=',e_out,' rel_INCL = ',INCL_in)

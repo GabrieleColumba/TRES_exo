@@ -24,7 +24,7 @@ import numpy as np
 
 REPORT_USER_WARNINGS = True
 
-REPORT_DEBUG = False
+REPORT_DEBUG = True
 REPORT_DT = False 
 REPORT_SN_EVOLUTION = False
 REPORT_TRIPLE_EVOLUTION = False 
@@ -186,7 +186,7 @@ class Triple_Class:
                 self.triple.child1.bin_type = bin_type['rlof']    
             else:
                 print('currently not implemented')
-                exit(-1)    
+                sys.exit(-1)    
             return
         
         self.triple.kozai_type = self.get_kozai_type()
@@ -203,16 +203,16 @@ class Triple_Class:
 
         if stop_at_disintegrated == False:
             print('stop_at_disintegrated = False not possible yet. After the disintegration of the triple, further evolution can be done with SeBa directly. ') 
-            exit(1)
+            sys.exit(1)
         if stop_at_outer_mass_transfer == False:
             print('stop_at_outer_mass_transfer = False not possible yet. Methodology is as of yet non-existent.' )
-            exit(1)
+            sys.exit(1)
         if stop_at_outer_collision == False:
             print('stop_at_outer_collision = False not possible. Non-hierarchical triples can not be simulated using the secular equations as used in TRES. Further evolution should be done by other means, e.g. one of the N-body codes implemented in AMUSE.' )
-            exit(1)
+            sys.exit(1)
         if stop_at_dynamical_instability == False:
             print('stop_at_dynamical_instability = False not possible. Unstable triples can not be simulated using the secular equations as used in TRES. Further evolution should be done by other means, e.g. one of the N-body codes implemented in AMUSE.') 
-            exit(1)
+            sys.exit(1)
 
                             
         self.stop_at_mass_transfer = stop_at_mass_transfer            
@@ -573,7 +573,7 @@ class Triple_Class:
 
             if stellar_system.convective_envelope_radius < 0|units.RSun:
                 print('convective_envelope_radius < 0')
-                exit(1)
+                sys.exit(1)
             if stellar_system.convective_envelope_radius == 0|units.RSun:
                 stellar_system.convective_envelope_mass = 1.e-10 |units.MSun    
                 stellar_system.convective_envelope_radius = 1.e-10 |units.RSun   
@@ -846,7 +846,7 @@ class Triple_Class:
             return Porb
         else:
             print('orbital_period: single star does not have a period')
-            exit(-1)
+            sys.exit(-1)
 
     def orbital_angular_momentum(self, bs):
         if not bs.is_star:
@@ -862,14 +862,14 @@ class Triple_Class:
             return J
         else:
             print('orbital_angular_momentum: single star does not have an orbit')
-            exit(-1)
+            sys.exit(-1)
     
     def spin_angular_momentum(self, ss):
         if ss.is_star:
             return ss.moment_of_inertia_of_star * ss.spin_angular_frequency
         else:
             print('spin_angular_momentum: structure stellar system unknown')        
-            exit(2)
+            sys.exit(2)
             
             
     def apsidal_motion_constant(self, star):
@@ -899,7 +899,7 @@ class Triple_Class:
         else:
             print('apsidal motion constant: stellar_type unknown')
             print(star.stellar_type)
-            exit(2)
+            sys.exit(2)
             
 
     def moment_of_inertia(self, star):
@@ -919,7 +919,7 @@ class Triple_Class:
             return I                   
         else:
             print('moment_of_inertia: structure stellar system unknown')        
-            exit(2)
+            sys.exit(2)
 
 
 
@@ -978,7 +978,7 @@ class Triple_Class:
                 return False
         else:
            print('Kozai type needs triple system')
-           exit(1)   
+           sys.exit(1)   
 
     def get_min_stellar_evolution_timescale_of_system(self, stellar_system = None):
         if stellar_system == None:
@@ -1070,11 +1070,11 @@ class Triple_Class:
                 print('RLOF in inner and outer binary')
                 print(Rl1, bin.child1.radius, Rl2, bin.child2.radius)
                 print(Rl3, star.radius)
-                exit(1)                   
+                sys.exit(1)                   
                 
         else:
             print('check_RLOF: structure stellar system unknown')
-            exit(2)    
+            sys.exit(2)    
                      
 #            
 #    def determine_partial_timestep_stable_mass_transfer(self, stellar_system = None):
@@ -1112,7 +1112,7 @@ class Triple_Class:
             print('\t')
         else:
             print('print_star needs a star')
-            exit(2)
+            sys.exit(2)
     
     
     def print_binary(self, binary):
@@ -1132,7 +1132,7 @@ class Triple_Class:
             print('\t')
         else:
             print('print_binary needs a binary')        
-            exit(2)
+            sys.exit(2)
     
     
     def print_stellar_system(self, stellar_system = None):
@@ -1190,7 +1190,7 @@ class Triple_Class:
                 stellar_system.parent = parents[2]
             elif len(parents) != 2:
                 print('set_parents: structure stellar system unknown') 
-                exit(2)
+                sys.exit(2)
  
     def save_snapshot(self):
         file_name = self.file_name
@@ -1359,7 +1359,7 @@ class Triple_Class:
 
             Rl1, Rl2, Rl3 = self.secular_code.give_roche_radii(self.triple)
             if star.radius >= Rl3:
-                exit(2)  
+                sys.exit(2)  
             elif bin.child1.radius >= Rl1 or bin.child2.radius >= Rl2:
                 return abs(time_step_factor_stable_mt*min(bin.child1.mass, bin.child2.mass)/self.triple.mass_transfer_rate)
             else:
@@ -1372,7 +1372,7 @@ class Triple_Class:
 
         else: 
             print('determine_time_step_tides: structure stellar system unknown')        
-            exit(2)    
+            sys.exit(2)    
 
     
          
@@ -1386,7 +1386,7 @@ class Triple_Class:
 #            Rl2 = roche_radius(self, self.child2)
 #            if self.triple.child1.radius >= Rl1 or self.triple.child2.radius >= Rl2:
 #                print('close to rlof already rlof')
-#                exit(0)
+#                sys.exit(0)
 #            elif self.triple.child1.radius >= Rl_fraction*Rl1 and self.triple.child2.radius >= Rl_fraction*Rl2:
 #                ratio_rad_rlof = maximum(self.triple.child1.radius/Rl1, self.triple.child2.radius/Rl2)
 #                print('dt_close_to_mt', time_step_factor_stable_mt, self.triple.child1.mass, self.triple.child2.mass, self.triple.mass_transfer_rate)
@@ -1416,7 +1416,7 @@ class Triple_Class:
 #            Rl1, Rl2, Rl3 = self.secular_code.give_roche_radii(self.triple)
 #            if bin.child1.radius >= Rl1 or bin.child2.radius >= Rl2 or star.radius >= Rl3:
 #                print('close to rlof already rlof')
-#                exit(0)
+#                sys.exit(0)
 #
 #            dt=[]
 #            ratio_rad_rlof=[]
@@ -1440,7 +1440,7 @@ class Triple_Class:
 #                return False, 0, 0
 #        else:
 #            print('close_to_RLOF: structure stellar system unknown')        
-#            exit(2)    
+#            sys.exit(2)    
     
         
     def determine_time_step(self):         
@@ -1560,10 +1560,10 @@ class Triple_Class:
 #            if close_to_RLOF_bool:
 #                if ratio_rad_rlof >= 1.0:
 #                    print('ratio_rad_rlof >1?')
-#                    exit(0)
+#                    sys.exit(0)
 #                else:
 #                    print('close to rlof', time_step_close_to_mt, time_step, ratio_rad_rlof)
-#                    exit(0)
+#                    sys.exit(0)
 #                    time_step = min(time_step, time_step_close_to_mt)
 
 
@@ -1740,10 +1740,10 @@ class Triple_Class:
             #SN kick in binary
             #not implemented currently
             print("Supernova in binary at time = ",self.triple.time) 
-            exit(1)                   
+            sys.exit(1)                   
         elif not self.is_triple():
             print('SN only implemented in triple')
-            exit(1)
+            sys.exit(1)
                     
            
         #SN in triple
@@ -1909,7 +1909,7 @@ class Triple_Class:
                 print('single stellar evolution')
 
             print('for now no single stellar evolution - exiting program')
-            exit(2)
+            sys.exit(2)
                 
             return
         elif self.is_binary(stellar_system):
@@ -1930,7 +1930,7 @@ class Triple_Class:
             else:
                 print('resolve_stellar_interaction: structure stellar system unknown')
                 print('both children are binaries')
-                exit(2)
+                sys.exit(2)
             
             if REPORT_TRIPLE_EVOLUTION:
                 print('\n perform stellar interaction: binary')
@@ -2100,7 +2100,7 @@ class Triple_Class:
         self.secular_code.model_time = self.previous_time                       
         if self.fixed_timestep < 0.|units.yr:
             print('fixed_timestep < 0: should not be possible', self.triple.time, self.secular_code.model_time, self.fixed_timestep)
-            exit(1)                    
+            sys.exit(1)                    
         #rewind system
         self.stellar_code.particles.recall_memory_one_step()
         self.refresh_memory() 
@@ -2142,7 +2142,7 @@ class Triple_Class:
 #                self.triple.child1.bin_type = bin_type['rlof']    
 #            else:
 #                print('currently not implemented')
-#                exit(-1)    
+#                sys.exit(-1)    
 #                
 #            self.determine_mass_transfer_timescale() # to set the stability #obsolete? 
 #            return False
@@ -2194,7 +2194,7 @@ class Triple_Class:
                     self.triple.child1.bin_type = bin_type['rlof']    
                 else:
                     print('currently not implemented')
-                    exit(-1)                        
+                    sys.exit(-1)                        
                 return False
             
         return True
@@ -3589,7 +3589,7 @@ if __name__ == '__main__':
         if REPORT_USER_WARNINGS:
             print('Choose a different system. The parameters of the given triple are incorrect.' )   
         # no codes initialized yet
-        exit(0)
+        sys.exit(0)
     elif options['stop_at_semisecular_regime'] == True and triple_class_object.triple.semisecular_regime_at_initialisation == True:
         if REPORT_USER_WARNINGS:
             print('Choose a different system. The given triple is in the semisecular regime at initialization.')
