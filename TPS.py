@@ -57,7 +57,8 @@ lib_outer_ecc_distr = {0: "Thermal", #default
                  1: "Constant eccentricity",
                  2: "Sana et al. 2012 e^-0.45", #-> close binaries
                  3: "Flat distribution",
-                 4: "Powerlaw e^0.5",}     
+                 4: "Powerlaw e^0.5",
+                 5: "Beta distribution (Bowler+ 2020)",}    # SSOs only
 ##            --i_max    upper limit for the relative inclination [pi]
 ##            --i_min    lower limit for the relative inclination [0]
 ##            --i_distr  relative inclination option: 
@@ -118,6 +119,7 @@ from amuse.units import units, constants
 from amuse.support.console import set_printing_strategy
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.stats import beta as beta_distribution
 
 from amuse.ic.kroupa import new_kroupa_mass_distribution
 from amuse.ic.scalo import new_scalo_mass_distribution
@@ -128,8 +130,8 @@ from amuse.ic.flatimf import new_flat_mass_distribution
 precision = 1.e-10 
 # min_mass = 0.08 |units.MSun # for primary stars
 min_mass_stellar = 0.08 |units.MSun     # for primary stars
-min_mass_BD = 0.0123 |units.MSun        # BD boundary
-absolute_min_mass = 0.00005|units.MSun  # for planetary objects
+min_mass_BD = 16 |units.MJupiter        # BD boundary
+absolute_min_mass = 0.2 |units.MJupiter     # for planetary objects
 absolute_max_mass = 100 |units.MSun
 max_mass_SSO = 0.078 |units.MSun
 REPORT = True 
@@ -159,8 +161,8 @@ def eggleton_mass_distr(lower_mass, upper_mass):
 
 def powerlaw_distr(m_min, m_max, slope):    
     if slope == -1 or slope == 0:
-        return 'slope of powerlap distribution incorrect'
-        sys.exit(1)
+        #return 'slope of powerlap distribution incorrect'
+        sys.exit('slope of powerlap distribution incorrect')
     slope1 = slope + 1
     factor = (pow(m_max / m_min, slope1) - 1.0 )
     x = np.random.uniform(0,1)
@@ -171,6 +173,19 @@ def flat_distr_semi( lower, upper):
     upper_RSun = upper.value_in(units.RSun)
     x = np.random.uniform( lower_RSun, upper_RSun)
     return x | units.RSun
+
+def beta_distr_SSOs( mass, lower, upper):    # (Bowler et al 2020)
+    if absolute_min_mass < mass <= min_mass_BD :
+        A, B = 30, 200      # for CBPs 
+    elif min_mass_BD < mass < max_mass_SSO :
+        A, B = 2.30, 1.65   # for BDs 
+    else:
+        sys.exit('You may be using a SSOs distribution for a stellar object, exiting')
+    e_sample = beta_distribution.rvs( A, B)
+    if lower <= e_sample <= upper:
+        return e_sample
+    return beta_distr_SSOs( mass, lower, upper)    # pick another sample within given bounds
+
 
 class Generate_initial_triple:
     #-------
@@ -529,6 +544,8 @@ class Generate_initial_triple:
                 return flat_distr(ecc_min, ecc_max)
             elif ecc_distr == 4: #Powerlaw
                 return powerlaw_distr(ecc_min+precision, ecc_max, 0.5)
+            elif ecc_distr == 5: # Beta distribution
+                return beta_distr_SSOs( self.outer_mass, ecc_min, ecc_max)
             else: #Thermal distribution
                  return np.sqrt(np.random.uniform(ecc_min, ecc_max))
                  

@@ -235,6 +235,7 @@ Depreciated (yet still functioning) parameters are given in {}.
         2: "Sana et al. 2012 e^-0.45", #-> close binaries
         3: "Flat distribution",
         4: "Powerlaw e^0.5",
+        5: "Beta distribution (Bowler+ 2020)",    # SSOs only
 --i_max                     upper limit for the relative inclination [pi]
 --i_min                     lower limit for the relative inclination [0]
 --i_distr                   relative inclination option: 
