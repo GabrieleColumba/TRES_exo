@@ -60,10 +60,6 @@ maximum_time_step = np.inf|units.Myr
 kanonical_neutron_star_mass = 1.4|units.MSun
 fall_back_mass = 41 |units.MSun
 
-stellar_types_SN_remnants = [13,14,15]|units.stellar_type # remnant types created through a supernova
-stellar_types_remnants = [7,8,9,10,11,12,13,14,15]|units.stellar_type
-stellar_types_dr = [2,4,7,8,9,10,11,12,13,14,15]|units.stellar_type #stars which go through a instantaneous radius change at formation; hertzsprung gap stars (small envelope perturbation) + horizontal branch stars + remnants
-
 
 class Triple_Class:
     #-------
@@ -1472,7 +1468,7 @@ class Triple_Class:
 #             time_step_tides = self.determine_time_step_tides()  	
                 
         if REPORT_DT or REPORT_DEBUG:
-            print('time:', time_step_max, time_step_stellar_code, time_step_wind, time_step_radius_change, time_step_tides)
+            print('time:', self.triple.time, time_step_max, time_step_stellar_code, time_step_wind, time_step_radius_change, time_step_tides)
 
 
 
@@ -1536,9 +1532,8 @@ class Triple_Class:
 
 
         time_step = max(time_step, minimum_time_step)  
-        time_step = min(time_step, maximum_time_step)  
-
-
+        if self.triple.time >= self.tinit:
+            time_step = min(time_step, maximum_time_step)  
 
 
 
@@ -1729,7 +1724,8 @@ class Triple_Class:
         elif self.secular_code.parameters.ignore_tertiary == True:
             #SN kick in binary
             #not implemented currently
-            sys.exit("Supernova in binary at time = ",self.triple.time) 
+            print("Supernova in binary at time = ",self.triple.time) 
+            sys.exit("Supernova in binary at time = ")
         elif not self.is_triple():
             sys.exit('SN only implemented in triple')
                     
@@ -2082,7 +2078,9 @@ class Triple_Class:
         self.triple.time = self.previous_time
         self.secular_code.model_time = self.previous_time                       
         if self.fixed_timestep < 0.|units.yr:
-            sys.exit('fixed_timestep < 0: should not be possible', self.triple.time, self.secular_code.model_time, self.fixed_timestep)                   
+            print(self.triple.time, self.secular_code.model_time, self.fixed_timestep)      
+            sys.exit('fixed_timestep < 0: should not be possible')           
+            
         #rewind system
         self.stellar_code.particles.recall_memory_one_step()
         self.refresh_memory() 
@@ -2456,7 +2454,7 @@ class Triple_Class:
                     print(self.has_donor(), self.secular_code.triples[0].error_flag_secular)
                     break
                     
-                elif self.has_donor() and self.triple.bin_type == 'detached' and self.triple.child2.bin_type == 'detached':
+                elif self.has_donor() and self.triple.bin_type == 'detached' and self.triple.child2.bin_type == 'detached' and self.secular_code.model_time < self.triple.time-minimum_time_step:
                     self.determine_mass_transfer_timescale()            
                     if self.check_stopping_conditions_stellar()==False:
                         print('stopping conditions stellar 2')                    
@@ -2528,7 +2526,7 @@ class Triple_Class:
         self.save_snapshot()        
             
             
-        if REPORT_DEBUG:
+        if REPORT_DEBUG and self.triple.time >= self.tinit:
             # for plotting data
             e_in_array = np.array(e_in_array)
             g_in_array = np.array(g_in_array)
@@ -2725,6 +2723,43 @@ def plot_function(triple, dir_plots):
 
 
 
+
+    figure = plt.figure(figsize=(10,13))
+    N_subplots = 4
+    
+    plot_e_in = figure.add_subplot(N_subplots,1,1)
+    plot_e_out = figure.add_subplot(N_subplots,1,2)
+    plot_i_relative = figure.add_subplot(N_subplots,1,3)
+    plot_a_in = figure.add_subplot(N_subplots,1,4)
+    
+    plot_e_in.plot(times_array_Myr,e_in_array, label= '$e_\mathrm{in}$')
+    plot_e_in.set_xlim(0,t_max_Myr)
+    plot_e_in.set_xlabel('$t/\mathrm{Myr}$')
+    plot_e_in.set_ylabel('$e$')
+    plot_e_in.legend(loc=0)
+
+    plot_e_out.plot(times_array_Myr,e_out_array, label= '$e_\mathrm{out}$')
+    plot_e_out.set_xlim(0,t_max_Myr)
+    plot_e_out.set_xlabel('$t/\mathrm{Myr}$')
+    plot_e_out.set_ylabel('$e$')
+    plot_e_out.legend(loc=0)
+
+    
+    plot_i_relative.plot(times_array_Myr,i_relative_array*180.0/np.pi)
+    plot_i_relative.set_xlim(0,t_max_Myr)
+    plot_i_relative.set_ylim(0.9*min(i_relative_array*180.0/np.pi),1.1*max(i_relative_array*180.0/np.pi))
+    plot_i_relative.set_xlabel('$t/\mathrm{Myr}$')
+    plot_i_relative.set_ylabel('$i_\mathrm{relative} ({}^\circ)$')
+    
+    plot_a_in.plot(times_array_Myr,a_in_array_AU)
+    plot_a_in.set_xlabel('$t/\mathrm{Myr}$')
+    plot_a_in.set_ylabel('$a_\mathrm{in}$')
+
+    
+    figure.subplots_adjust(left=0.2, right=0.85, top=0.8, bottom=0.15)
+    plt.savefig(dir_plots+'TRES2'+generic_name+'.pdf')
+#    plt.show()
+    plt.close()
 
 
 
