@@ -400,7 +400,10 @@ def common_envelope_angular_momentum_balance(bs, donor, accretor, self):
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
         # print('\n Envelope mass of donor:' , donor.mass - donor.core_mass)
         # print('\n Envelope mass of accretor:' , accretor.mass - accretor.core_mass)
-        sys.exit("error in adjusting triple after gamma CE: RLOF")
+        # sys.exit("error in adjusting triple after gamma CE: RLOF")
+        stopping_condition = perform_inner_merger(bs, donor, accretor, self)
+        if not stopping_condition: #stellar interaction
+           return False
         
     donor.is_donor = False
     bs.is_mt_stable = True
@@ -469,7 +472,10 @@ def common_envelope_energy_balance(bs, donor, accretor, self):
     if self.has_donor():
         print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
-        sys.exit("error in adjusting triple after alpha CE: RLOF")
+        # sys.exit("error in adjusting triple after alpha CE: RLOF")
+        stopping_condition = perform_inner_merger(bs, donor, accretor, self)
+        if not stopping_condition: #stellar interaction
+           return False
         
     donor.is_donor = False
     bs.is_mt_stable = True
@@ -544,7 +550,10 @@ def double_common_envelope_energy_balance(bs, donor, accretor, self):
     if self.has_donor():
         print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
-        sys.exit("error in adjusting triple after double CE: RLOF")
+        # sys.exit("error in adjusting triple after double CE: RLOF")
+        stopping_condition = perform_inner_merger(bs, donor, accretor, self)
+        if not stopping_condition: #stellar interaction
+           return False
         
     donor.is_donor = False
     bs.is_mt_stable = True
@@ -576,7 +585,10 @@ def common_envelope_phase(bs, donor, accretor, self):
             print(self.triple.child2.child1.radius, self.triple.child2.child2.radius,self.triple.child1.radius)
             print(self.secular_code.give_roche_radii(self.triple))
             print('binary Roche lobe radii:', roche_radius(bs, bs.child1, self), roche_radius(bs, bs.child2, self))
-            sys.exit("error in adjusting system after CE: RLOF")
+            # sys.exit("error in adjusting system after CE: RLOF")
+            stopping_condition = perform_inner_merger(bs, donor, accretor, self)
+            if not stopping_condition: #stellar interaction
+                return False
             
         donor.is_donor = False
         bs.is_mt_stable = True
@@ -1267,7 +1279,7 @@ def compute_mass_evaporation(system, delta_t):
     t_start = 0.
     t_end = P_pl		#average on one orbital period of the planet (~ 5 P_binary)
 
-    print('Time: ', system.triple.time, 'star types:', binary.child1.stellar_type, '\t', binary.child2.stellar_type)
+    # print('Time: ', system.triple.time, 'star types:', binary.child1.stellar_type, '\t', binary.child2.stellar_type)
     L_xuv1 = xuv_luminosity(binary.child1)
     a_st_1 = a_to_star(a_bin, 1)
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100, full_output=1)[0]

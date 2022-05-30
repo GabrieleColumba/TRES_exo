@@ -24,13 +24,13 @@ import numpy as np
 
 REPORT_USER_WARNINGS = True
 
-REPORT_DEBUG = True
+REPORT_DEBUG = False
 REPORT_DT = False 
 REPORT_SN_EVOLUTION = False
 REPORT_TRIPLE_EVOLUTION = False 
 
-GET_GYRATION_RADIUS_FROM_STELLAR_CODE = False
-GET_AMC_FROM_STELLAR_CODE = False
+GET_GYRATION_RADIUS_FROM_STELLAR_CODE = True
+GET_AMC_FROM_STELLAR_CODE = True
 
 no_stellar_evolution = False
 
@@ -899,7 +899,7 @@ class Triple_Class:
         if star.is_star:
 
             if GET_GYRATION_RADIUS_FROM_STELLAR_CODE:
-                I = star.gyration_radius * (star.mass)*star.radius**2                     
+                I = star.gyration_radius**2 * (star.mass)*star.radius**2                     
             else: 
                 k2 = 0.1
                 k3 = 0.21
@@ -2365,7 +2365,7 @@ class Triple_Class:
                     #print("computing mass evaporation, dt:", dt)
                     mass_lost = compute_mass_evaporation(self, dt)
                     self.triple.child1.previous_mass = self.triple.child1.mass        # updating the last value of the mass
-                    print("mass lost:", mass_lost)
+                    # print("mass lost:", mass_lost)
 
                     planet = self.triple.child1
                     planet_in_stellar_code = planet.as_set().get_intersecting_subset_in(self.stellar_code.particles)[0]
