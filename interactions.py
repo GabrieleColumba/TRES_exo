@@ -1025,7 +1025,7 @@ def q_crit(donor, companion):
         return 100.0 #0.628
     elif donor.stellar_type in [18,19]|units.stellar_type:#planet or brown dwarf. 
         #metzger et al 2012,425,2778, 
-        return 1. * (donor.radius/self.get_size(companion))**3
+        return 1. * (donor.radius/companion.radius)**3
     else: #stellar type 2, and 8
         return 3 # high for hg?
         
