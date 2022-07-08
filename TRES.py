@@ -23,6 +23,7 @@ from math import sqrt, isnan
 import numpy as np
 
 REPORT_USER_WARNINGS = True
+MAKE_PLOTS = False
 
 REPORT_DEBUG = False
 REPORT_DT = False 
@@ -568,7 +569,14 @@ class Triple_Class:
                 sys.exit('convective_envelope_radius < 0')
             if stellar_system.convective_envelope_radius == 0|units.RSun:
                 stellar_system.convective_envelope_mass = 1.e-10 |units.MSun    
-                stellar_system.convective_envelope_radius = 1.e-10 |units.RSun   
+                stellar_system.convective_envelope_radius = 1.e-10 |units.RSun  
+                                 
+            #When the GW inspiral time is shorter than the inner orbit, the numerical solver crashes
+            #This is only possible for BH & NS as other stars would fill their RL earlier
+            #To avoid this articially increase stellar radii of BH/NS in secular code 
+            #Does not affect any other processes
+            if stellar_system.stellar_type in stellar_types_SN_remnants:
+                stellar_system.radius = stellar_system.radius*10                
                  
         else:
             self.update_stellar_parameters(stellar_system.child1)        
@@ -1559,19 +1567,20 @@ class Triple_Class:
                 print('donor time:',  self.determine_time_step_stable_mt())
 
             t_donor = self.determine_time_step_stable_mt()*time_step_factor_stable_mt # extra small for safety
-            t_donor = max(minimum_time_step, min(time_step, t_donor))#
+            t_donor_lim = max(minimum_time_step, min(time_step, t_donor))#
             # although fixed_timestep < time_step, fixed_timestep can be > time_step_stable_mt
-            
-            if self.fixed_timestep < t_donor:
-                time_step = t_donor                
-                self.secular_code.parameters.check_for_inner_RLOF = False
-            else: 
+
+            if t_donor == np.inf|units.Myr:
+                #bh or ns donors
                 time_step = self.fixed_timestep
+            elif self.fixed_timestep < t_donor_lim:
+                time_step = t_donor_lim
+                self.secular_code.parameters.check_for_inner_RLOF = False
+            else:
+                time_step = self.fixed_timestep
+                           
             self.fixed_timestep = -1|units.Myr
             return time_step # as previous timestep was effectively zero -> min increase is zero           
-
-           
-
 
         return time_step
     #-------
@@ -1721,15 +1730,9 @@ class Triple_Class:
             #only velocity kick needs to be taken into account here
             #not followed currently
             return False
-        elif self.secular_code.parameters.ignore_tertiary == True:
-            #SN kick in binary
-            #not implemented currently
-            print("Supernova in binary at time = ",self.triple.time) 
-            sys.exit("Supernova in binary at time = ")
         elif not self.is_triple():
             sys.exit('SN only implemented in triple')
                     
-           
         #SN in triple
         if self.triple.child1.is_star:
             star = self.triple.child1
@@ -1771,7 +1774,10 @@ class Triple_Class:
  
         self.save_snapshot()                    
  
- 
+         #reset orbital parameters tertiary in case of binary or ignore_tertiary
+        a_out_init = self.triple.semimajor_axis
+        e_out_init = self.triple.eccentricity              
+
         # determine stellar anomaly
         # mean anomaly increases uniformly from 0 to 2\pi radians during each orbit
         inner_ecc = bin.eccentricity
@@ -1780,14 +1786,11 @@ class Triple_Class:
         inner_eccentric_anomaly = optimize.brentq(self.anomaly_converter, 0., 2.*np.pi, args=(inner_ecc, inner_mean_anomaly))
         inner_true_anomaly = 2.* np.arctan2(np.sqrt(1-inner_ecc) * np.cos(inner_eccentric_anomaly/2.), np.sqrt(1+inner_ecc) * np.sin(inner_eccentric_anomaly/2.))
         # min teken verschil met cos_true_anomaly = (np.cos(eccentric_anomaly)-ecc) / (1-ecc*np.cos(eccentric_anomaly))
-        
-        
 
         outer_ecc = self.triple.eccentricity
         outer_mean_anomaly = np.random.uniform(0., 2.*np.pi)  
         outer_eccentric_anomaly = optimize.brentq(self.anomaly_converter, 0., 2.*np.pi, args=(outer_ecc, outer_mean_anomaly))
         outer_true_anomaly = 2.* np.arctan2(np.sqrt(1-outer_ecc) * np.cos(outer_eccentric_anomaly/2.), np.sqrt(1+outer_ecc) * np.sin(outer_eccentric_anomaly/2.))
-
 
         if REPORT_SN_EVOLUTION:
             print('before SN:', self.triple.number) 
@@ -1818,12 +1821,14 @@ class Triple_Class:
         bin.child2.radius = bin_child2_proper_radius
         star.radius =  star_proper_radius
 
+        if self.secular_code.parameters.ignore_tertiary:
+            self.triple.semimajor_axis = a_out_init
+            self.triple.eccentricity = e_out_init
 
         if REPORT_SN_EVOLUTION:
             print('after SN')
             print('eccentricity:', bin.eccentricity, self.triple.eccentricity)
             print('semi-major axis:', bin.semimajor_axis, self.triple.semimajor_axis)
-
 
         if bin.eccentricity >= 1.0 or bin.eccentricity < 0.0 or bin.semimajor_axis <=0.0|units.RSun or isnan(bin.semimajor_axis.value_in(units.RSun)):
             if REPORT_SN_EVOLUTION:
@@ -1863,18 +1868,16 @@ class Triple_Class:
         if star.stellar_type in stellar_types_SN_remnants:
             self.secular_code.parameters.include_spin_radius_mass_coupling_terms_star3 = False
 
-
         if self.stop_at_SN:
             if REPORT_SN_EVOLUTION:
                 print("Supernova at time = ",self.triple.time )
                 print(self.triple.child2.child1.mass, self.triple.child2.child1.stellar_type)
                 print(self.triple.child2.child2.mass, self.triple.child2.child2.stellar_type)
                 print(self.triple.child1.mass, self.triple.child1.stellar_type)
-            return False            
-
+            return False   
+            
         #check for rlof -> if rlof than stop?
 #        self.check_RLOF()
-
 
         return True
         
@@ -2076,7 +2079,8 @@ class Triple_Class:
         #find beginning of RLOF
         self.fixed_timestep = self.secular_code.model_time - self.previous_time
         self.triple.time = self.previous_time
-        self.secular_code.model_time = self.previous_time                       
+        self.secular_code.model_time = self.previous_time      
+                         
         if self.fixed_timestep < 0.|units.yr:
             print(self.triple.time, self.secular_code.model_time, self.fixed_timestep)      
             sys.exit('fixed_timestep < 0: should not be possible')           
@@ -2255,7 +2259,7 @@ class Triple_Class:
     def evolve_model(self):
         start_time = time.time()
     
-        if REPORT_DEBUG:
+        if REPORT_DEBUG or MAKE_PLOTS:
             # for plotting data
             times_array = quantities.AdaptingVectorQuantity() 
             a_in_array = quantities.AdaptingVectorQuantity()
@@ -2493,7 +2497,7 @@ class Triple_Class:
             self.calculate_maximum_change_eccentricity()
 
 
-            if REPORT_DEBUG:
+            if REPORT_DEBUG or MAKE_PLOTS:
                 # for plotting data
                 times_array.append(self.triple.time)
                 e_in_array.append(self.triple.child2.eccentricity)
@@ -2526,7 +2530,7 @@ class Triple_Class:
         self.save_snapshot()        
             
             
-        if REPORT_DEBUG and self.triple.time >= self.tinit:
+        if (REPORT_DEBUG or MAKE_PLOTS) and self.triple.time >= self.tinit:
             # for plotting data
             e_in_array = np.array(e_in_array)
             g_in_array = np.array(g_in_array)
@@ -2648,33 +2652,33 @@ def plot_function(triple, dir_plots):
         f.write('\n')
     f.close()
     
-    for i_s in range(len(times_array_Myr)):
-        print(times_array_Myr[i_s], end = ' ')
-        print( a_in_array_AU[i_s], end = ' ')
-        print( g_in_array[i_s], end = ' ')
-        print( e_in_array[i_s], end = ' ')
-        print( i_relative_array[i_s], end = ' ')
-        print( o_in_array[i_s], end = ' ')
-        print( a_out_array_AU[i_s], end = ' ')
-        print( g_out_array[i_s], end = ' ')
-        print( e_out_array[i_s], end = ' ')
-        print( o_out_array[i_s], end = ' ')
-        print( m1_array[i_s], end = ' ')
-        print( m2_array[i_s], end = ' ')
-        print( m3_array[i_s], end = ' ')
-        print( spin1_array[i_s], end = ' ')
-        print( spin2_array[i_s], end = ' ')  
-        print( spin3_array[i_s], end = ' ')  
-        print( r1_array[i_s], end = ' ')    
-        print( r2_array[i_s], end = ' ')    
-        print( r3_array[i_s], end = ' ')
-        print( RL1_array[i_s], end = ' ')
-        print( RL2_array[i_s], end = ' ')
-        print( RL3_array[i_s], end = ' ')
-        print( moi1_array[i_s], end = ' ')   
-        print( moi2_array[i_s], end = ' ')   
-        print( moi3_array[i_s], end = ' ')
-        print( delta_e_in_array[i_s])
+#    for i_s in range(len(times_array_Myr)):
+#        print(times_array_Myr[i_s], end = ' ')
+#        print( a_in_array_AU[i_s], end = ' ')
+#        print( g_in_array[i_s], end = ' ')
+#        print( e_in_array[i_s], end = ' ')
+#        print( i_relative_array[i_s], end = ' ')
+#        print( o_in_array[i_s], end = ' ')
+#        print( a_out_array_AU[i_s], end = ' ')
+#        print( g_out_array[i_s], end = ' ')
+#        print( e_out_array[i_s], end = ' ')
+#        print( o_out_array[i_s], end = ' ')
+#        print( m1_array[i_s], end = ' ')
+#        print( m2_array[i_s], end = ' ')
+#        print( m3_array[i_s], end = ' ')
+#        print( spin1_array[i_s], end = ' ')
+#        print( spin2_array[i_s], end = ' ')  
+#        print( spin3_array[i_s], end = ' ')  
+#        print( r1_array[i_s], end = ' ')    
+#        print( r2_array[i_s], end = ' ')    
+#        print( r3_array[i_s], end = ' ')
+#        print( RL1_array[i_s], end = ' ')
+#        print( RL2_array[i_s], end = ' ')
+#        print( RL3_array[i_s], end = ' ')
+#        print( moi1_array[i_s], end = ' ')   
+#        print( moi2_array[i_s], end = ' ')   
+#        print( moi3_array[i_s], end = ' ')
+#        print( delta_e_in_array[i_s])
     
     
             
@@ -3450,7 +3454,7 @@ def main(inner_primary_mass= 1.3|units.MSun, inner_secondary_mass= 0.5|units.MSu
             print('Choose a different system. There is mass transfer in the given triple at initialization.')
     else:    
         triple_class_object.evolve_model()
-        if REPORT_DEBUG:
+        if REPORT_DEBUG or MAKE_PLOTS:
             plot_function(triple_class_object, dir_plots)
             triple_class_object.print_stellar_system()
     triple_class_object.stellar_code.stop()
@@ -3617,7 +3621,7 @@ if __name__ == '__main__':
             print('Choose a different system. There is mass transfer in the given triple at initialization.')
     else:    
         triple_class_object.evolve_model()
-        if REPORT_DEBUG:
+        if REPORT_DEBUG or MAKE_PLOTS:
             plot_function(triple_class_object, options['dir_plots'])
             triple_class_object.print_stellar_system()
 
