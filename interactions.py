@@ -51,23 +51,12 @@ bin_type = {
                 'contact': 'contact',    
                 'collision': 'collision',    
                 'semisecular': 'semisecular',    
-                  
                 'rlof': 'rlof',   #only used for stopping conditions
                 'stable_mass_transfer': 'stable_mass_transfer',
-                 
                 'common_envelope': 'common_envelope',     
-
                 'common_envelope_energy_balance': 'common_envelope_energy_balance',     
-                'ce_e': 'common_envelope_energy_balance',     
-                'ce_alpha': 'common_envelope_energy_balance',     
-
                 'common_envelope_angular_momentum_balance': 'common_envelope_angular_momentum_balance',
-                'ce_J': 'common_envelope_angular_momentum_balance',
-                'ce_gamma': 'common_envelope_angular_momentum_balance',
-
-                'double_common_envelope': 'double_common_envelope',
-                'dce': 'double_common_envelope',
-                
+                'double_common_envelope': 'double_common_envelope',                
                 
             }            
 
@@ -406,9 +395,8 @@ def common_envelope_angular_momentum_balance(bs, donor, accretor, self):
         print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.child1.radius, self.triple.child2.child2.radius,self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child2.child1.core_mass, self.triple.child2.child1.mass-self.triple.child2.child1.core_mass, self.triple.child2.child1.stellar_type)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
-        # print('\n Envelope mass of donor:' , donor.mass - donor.core_mass)
-        # print('\n Envelope mass of accretor:' , accretor.mass - accretor.core_mass)
-        # sys.exit("error in adjusting triple after gamma CE: RLOF")
+
+#        sys.exit("error in adjusting triple after gamma CE: RLOF")
         stopping_condition = perform_inner_merger(bs, donor, accretor, self)
         if not stopping_condition: #stellar interaction
            return False
@@ -480,7 +468,7 @@ def common_envelope_energy_balance(bs, donor, accretor, self):
     if self.has_donor():
         print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
-        # sys.exit("error in adjusting triple after alpha CE: RLOF")
+#        sys.exit("error in adjusting triple after alpha CE: RLOF")
         stopping_condition = perform_inner_merger(bs, donor, accretor, self)
         if not stopping_condition: #stellar interaction
            return False
@@ -558,7 +546,8 @@ def double_common_envelope_energy_balance(bs, donor, accretor, self):
     if self.has_donor():
         print(self.triple.child2.child1.mass, self.triple.child2.child2.mass, self.triple.child2.semimajor_axis, self.triple.child2.eccentricity, self.triple.child2.child1.is_donor, self.triple.child2.child2.is_donor)
         print(self.triple.child1.mass, self.triple.semimajor_axis, self.triple.eccentricity, self.triple.child1.is_donor)
-        # sys.exit("error in adjusting triple after double CE: RLOF")
+
+#        sys.exit("error in adjusting triple after double CE: RLOF")
         stopping_condition = perform_inner_merger(bs, donor, accretor, self)
         if not stopping_condition: #stellar interaction
            return False
@@ -593,10 +582,11 @@ def common_envelope_phase(bs, donor, accretor, self):
             print(self.triple.child2.child1.radius, self.triple.child2.child2.radius,self.triple.child1.radius)
             print(self.secular_code.give_roche_radii(self.triple))
             print('binary Roche lobe radii:', roche_radius(bs, bs.child1, self), roche_radius(bs, bs.child2, self))
-            # sys.exit("error in adjusting system after CE: RLOF")
+
+#            sys.exit("error in adjusting system after CE: RLOF")
             stopping_condition = perform_inner_merger(bs, donor, accretor, self)
             if not stopping_condition: #stellar interaction
-                return False
+               return False
             
         donor.is_donor = False
         bs.is_mt_stable = True
@@ -1009,7 +999,7 @@ def perform_stellar_interaction(bs, self):
         
 #-------------------------
 #functions for the stability of mass transfer
-def q_crit(donor, companion):
+def q_crit(self, donor, companion):
     #following Hurley, Tout, Pols 2002
     if donor.stellar_type in [9]|units.stellar_type:
 #    if donor.stellar_type in [8,9]|units.stellar_type:
@@ -1022,7 +1012,7 @@ def q_crit(donor, companion):
     elif donor.stellar_type == 1|units.stellar_type:
         return 1./0.625 #following claeys et al. 2014 based on de mink et al 2007
     elif donor.stellar_type in stellar_types_compact_objects:#eventhough ns & bh shouldn't be donors... 
-        return 100.0 #0.628
+        return 0.25 #0.628
     elif donor.stellar_type in [18,19]|units.stellar_type:#planet or brown dwarf. 
         #metzger et al 2012,425,2778, 
         return 1. * (donor.radius/companion.radius)**3
@@ -1062,12 +1052,12 @@ def mass_transfer_stability(binary, self):
             binary.mass_transfer_rate = min(mt1, mt2) # minimum because mt<0
             binary.is_mt_stable = False    
 
-        elif binary.child1.is_donor and binary.child1.mass > binary.child2.mass*q_crit(binary.child1, binary.child2):
+        elif binary.child1.is_donor and binary.child1.mass > binary.child2.mass*q_crit(self, binary.child1, binary.child2):
             if REPORT_MASS_TRANSFER_STABILITY:
                 print("Mass transfer stability: Mdonor1>Macc*q_crit ")
             binary.mass_transfer_rate = -1.* binary.child1.mass / dynamic_timescale(binary.child1)
             binary.is_mt_stable = False
-        elif binary.child2.is_donor and binary.child2.mass > binary.child1.mass*q_crit(binary.child2, binary.child1):
+        elif binary.child2.is_donor and binary.child2.mass > binary.child1.mass*q_crit(self, binary.child2, binary.child1):
             if REPORT_MASS_TRANSFER_STABILITY:
                 print("Mass transfer stability: Mdonor2>Macc*q_crit ")
             binary.mass_transfer_rate= -1.* binary.child2.mass / dynamic_timescale(binary.child2) 
@@ -1121,7 +1111,7 @@ def mass_transfer_stability(binary, self):
             binary.mass_transfer_rate = -1.* star.mass / dynamic_timescale(star)
             binary.is_mt_stable = False          
             
-        elif star.is_donor and star.mass > self.get_mass(companion)*q_crit(star, companion):
+        elif star.is_donor and star.mass > self.get_mass(companion)*q_crit(self, star, companion):
             if REPORT_MASS_TRANSFER_STABILITY:
                 print("Mass transfer stability: Mdonor1>Macc*q_crit")
             binary.mass_transfer_rate = -1.* star.mass / dynamic_timescale(star)
