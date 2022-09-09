@@ -73,7 +73,7 @@ def rdc(file_name_root, print_style, print_full, print_init, line_number):
 
         return
 
-    print(lib_print_style[print_style])
+    # print(lib_print_style[print_style])
     triple_string = ''
     snapshot_string = '' 
     triple_number = 0
