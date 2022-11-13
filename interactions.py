@@ -1156,7 +1156,6 @@ def compute_mass_evaporation(system, delta_t):
     def xuv_luminosity(star):
         '''
         Compute the high energy luminosity from the bolometric one.
-        TO DO---->  change lower mass boundary
         '''
         L_bol = star.luminosity.value_in(units.erg/units.s)		#conversion to erg/s
         M_star = star.mass.value_in(units.MSun)
@@ -1245,15 +1244,15 @@ def compute_mass_evaporation(system, delta_t):
         distance_sq = d_p2 + d_z2
         return lum/distance_sq
 
-    def a_to_star(a_binary, star_n):
-        '''
-        stars distances from binary CM. 
-        0 is the primary star, 1 the secondary.
-        '''
-        if star_n==0:
-            return a_binary/(1+binary.child1.mass/binary.child2.mass)
-        else:
-            return a_binary/(1+binary.child2.mass/binary.child1.mass)
+#     def a_to_star(a_binary, star_n):
+#         '''
+#         stars distances from binary CM. 
+#         0 is the primary star, 1 the secondary.
+#         '''
+#         if star_n==0:
+#             return a_binary/(1+binary.child1.mass/binary.child2.mass)
+#         else:
+#             return a_binary/(1+binary.child2.mass/binary.child1.mass)
 
 
     # assigning the variables from the triple's attributes
@@ -1281,10 +1280,10 @@ def compute_mass_evaporation(system, delta_t):
 
     # print('Time: ', system.triple.time, 'star types:', binary.child1.stellar_type, '\t', binary.child2.stellar_type)
     L_xuv1 = xuv_luminosity(binary.child1)
-    a_st_1 = a_to_star(a_bin, 1)
+    a_st_1 = a_bin/(1+binary.child1.mass/binary.child2.mass)
     F1 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_1, P_pl, P_bin, L_xuv1, 0, i_orbits), limit=100, full_output=1)[0]
     L_xuv2 = xuv_luminosity(binary.child2)
-    a_st_2 = a_to_star(a_bin, 2)
+    a_st_2 = a_binary/(1+binary.child2.mass/binary.child1.mass)
     F2 = integrate.quad( flux_inst, t_start, t_end, args=(r_pl, a_st_2, P_pl, P_bin, L_xuv2, 1, i_orbits), limit=100, full_output=1)[0]
     
     #print('F1', F1, '\tF2', F2)
