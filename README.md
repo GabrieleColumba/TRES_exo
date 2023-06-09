@@ -1,4 +1,4 @@
-# TRES_Exo
+# TRES-Exo
 TRES code adapted to simulate giant circumbinary planets (CBPs). 
 
 Refer to https://github.com/amusecode/TRES#readme for a general description of TRES code and instructions on the installation procedure.
@@ -8,7 +8,7 @@ The main additions concerning planets include:
 - energy-limited atmospheric photoevaporation of planets;
 - initial planetary spin rate as 0.126 the breakup speed (Bryan+2018).
 
-*to use this criterion you must verify that in TRES.py at line 249 the value is 4, as:    secular_code.parameters.stability_limit_specification = 4
+*\*to use this criterion you must verify that in TRES.py at line 249 the value is 4, as:    secular_code.parameters.stability_limit_specification = 4*
 
 <!-- ### Description
 TRES is a numerical framework for simulating hierarchical triple systems with stellar and planetary components. 
@@ -301,12 +301,12 @@ A random population can be generated and simulated with TPS.py, with a Monte Car
 ```
 python TPS.py -n 10 --M_max 5 --M_min 4  --M_distr 0 --A_max 2000 --A_min 200 --A_distr 2
 ```
-where M_max e M_min are the primary star mass boundaries and \_distr is the chosen prior distribution to extract random samples from.
+where M_max e M_min are the primary star mass boundaries and M_distr is the chosen prior distribution to extract random samples from.
 See https://github.com/amusecode/TRES#input-parameters for the full list of initialising options and priors. 
 
 TPS.py embeds TRES.py to simulate the evolution of each single triple system.
 The output of TPS.py is saved analogously as TRES output, with the evolution of different systems appended in sequence.
-
+<!-- 
 We report here below the distributions specifically implemented for CBPs.
 
 ```
@@ -315,7 +315,7 @@ We report here below the distributions specifically implemented for CBPs.
 --Qout_min     {--q_min}    lower limit for the mass of the outer star [0.]
 --Qout_distr   {--q_distr}  outer mass ratio option: 
         2: "Galicher 2016 powerlaw (M^-1.31)",  # not default
---l_max    upper limit for the outer mass  [16 Mjup]
+--l_max    upper limit for the outer mass  [0.078 Msun]
 --l_min    lower limit for the outer mass  [0.2 Mjup]
  
 --Aout_max     {--a_max}    upper limit for the outer semi-major axis [5e6 RSun]
@@ -327,7 +327,7 @@ We report here below the distributions specifically implemented for CBPs.
 --Eout_min     {--e_min}    lower limit for the outer eccentricity [0.]
 --Eout_distr   {--e_distr}  outer eccentricity option: 
         5: "Beta distribution (Bowler+ 2020)",    # SSOs 
-```
+``` -->
 
 
 
