@@ -64,7 +64,7 @@ make
 ## Simple runs examples
 After installing and compiling the code (see instructions above) you can run from a terminal the following examples.
 
-#### Ex. 1
+#### Example 1
 Evolve a single system (binary star + CBP) that survives for one Hubble time (13.5 Gyr); use the following parameters:
 
 - primary mass:   M1           1.04  Msun 
@@ -87,7 +87,7 @@ assuming AMUSE is correctly installed in your python environment. This run will 
 If you wish to run the complete evolution, use -T 13500 to simulate one Hubble time and you'll obtain a DWD-orbiting CBP ('Magrathea' planet).
 
 
-#### Ex. 2
+#### Example. 2
 Evolve a single system (binary star + CBP) where the inner binary merge from DWD around 10 Gyr; use the following command:
 
 ```
