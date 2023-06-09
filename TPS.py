@@ -1095,7 +1095,7 @@ def parse_arguments():
     parser.add_option("--Q_distr", "--Qin_distr", dest="inner_mass_ratio_distr", type="int", default = 0,
                       help="inner mass ratio distribution [Flat]")
 
-    parser.add_option("--q_max", "--Qout_max", dest="outer_mass_ratio_max", type="float", default = 0.5,  # seems reasonable that third body has at most the average inner mass
+    parser.add_option("--q_max", "--Qout_max", dest="outer_mass_ratio_max", type="float", default = 1., 
                       help="maximum of outer mass ratio [%default]")
     parser.add_option("--q_min", "--Qout_min", dest="outer_mass_ratio_min", type="float", default = 0.,
                       help="minimum of outer mass ratio [%default]")
