@@ -66,7 +66,7 @@ After installing and compiling the code (see instructions above) you can run fro
 
 #### Example 1
 Evolve a single system (binary star + CBP) that survives for one Hubble time (13.5 Gyr); use the following parameters:
-
+```
 - primary mass:   M1           1.04  Msun 
 - secondary mass: M2           1.00  Msun
 - CBP mass:       M3           0.011 Msun
@@ -76,7 +76,7 @@ Evolve a single system (binary star + CBP) that survives for one Hubble time (13
 - CBP eccentricity:             Eout      0.15
 - relative orbital inclination: i         1.9 (rad)
 - simulation time:      T    1000 Myr
-
+```
 
 Run command:
 ```
